@@ -1,21 +1,21 @@
-class PaginateResponse<T> {
+class PaginatedResponse<T> {
   final int count;
   final String? next;
   final String? previous;
   final List<T> results;
 
-  PaginateResponse({
+  PaginatedResponse({
     required this.count,
     required this.next,
     required this.previous,
     required this.results,
   });
 
-  factory PaginateResponse.fromJson(
+  factory PaginatedResponse.fromJson(
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>) fromJsonT,
   ) {
-    return PaginateResponse<T>(
+    return PaginatedResponse<T>(
       count: json['count'] as int,
       next: json['next'] as String?,
       previous: json['previous'] as String?,

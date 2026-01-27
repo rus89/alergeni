@@ -16,7 +16,7 @@ class Pollens {
       id: json['id'],
       locationId: json['location'],
       date: DateTime.parse(json['date']),
-      concentrationIds: List<int>.from(json['concentration']),
+      concentrationIds: List<int>.from(json['concentrations']),
     );
   }
 
@@ -25,7 +25,7 @@ class Pollens {
       'id': id,
       'location': locationId,
       'date': date.toIso8601String().split('T')[0],
-      'concentration': concentrationIds,
+      'concentrations': concentrationIds,
     };
   }
 }
