@@ -1,3 +1,4 @@
+import 'package:alergeni/core/theme/app_theme.dart';
 import 'package:alergeni/data/models/allergen.dart';
 import 'package:flutter/material.dart';
 
@@ -89,13 +90,13 @@ class AllergenCard extends StatelessWidget {
     // Based on allergenicity index from API
     switch (allergen.allergenicityIndex) {
       case 1: // mild
-        return Colors.green;
+        return AppTheme.severityLow;
       case 2: // moderate
-        return Colors.orange;
+        return AppTheme.severityMedium;
       case 3: // severe
-        return Colors.red;
+        return AppTheme.severityHigh;
       default:
-        return Colors.grey;
+        return AppTheme.textSecondary;
     }
   }
 

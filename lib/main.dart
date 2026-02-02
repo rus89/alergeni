@@ -1,3 +1,4 @@
+import 'package:alergeni/core/theme/app_theme.dart';
 import 'package:alergeni/presentation/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -15,10 +16,7 @@ class AllergenApp extends StatelessWidget {
     return MaterialApp(
       title: 'Udahni',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
       home: const HomeScreen(),
     );
   }
