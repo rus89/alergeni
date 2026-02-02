@@ -91,9 +91,15 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       // Step 1: Fetch pollens for location
-      final pollensResponse = await _pollenRepository.fetchPollensByLocation(
-        _selectedLocation!.id,
-      );
+      final sixMonthsAgo = DateTime.now().subtract(const Duration(days: 180));
+      final dateAfter =
+          '${sixMonthsAgo.year}-${sixMonthsAgo.month.toString().padLeft(2, '0')}-${sixMonthsAgo.day.toString().padLeft(2, '0')}';
+
+      final pollensResponse = await _pollenRepository
+          .fetchRecentPollensByLocation(
+            _selectedLocation!.id,
+            dateAfter: dateAfter,
+          );
 
       // Step 2: Check if we have results
       if (pollensResponse.results.isEmpty) {
@@ -234,25 +240,44 @@ class _HomeScreenState extends State<HomeScreen> {
         .where((conc) => conc.value > 0)
         .toList();
 
+    activeConcentrations.sort((a, b) => b.value.compareTo(a.value));
+
     if (activeConcentrations.isEmpty) {
       return const Center(
         child: Text('Nema aktivnih koncentracija polena za izabranu lokaciju.'),
       );
     }
 
-    return ListView.builder(
-      itemCount: activeConcentrations.length,
-      itemBuilder: (context, index) {
-        final concentration = activeConcentrations[index];
-        final allergen = _allergens!.firstWhere(
-          (allergen) => allergen.id == concentration.allergenId,
-        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Text(
+            'Aktivni alergeni: ${activeConcentrations.length}',
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(color: Colors.grey[600]),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: activeConcentrations.length,
+            padding: EdgeInsets.zero,
+            itemBuilder: (context, index) {
+              final concentration = activeConcentrations[index];
+              final allergen = _allergens!.firstWhere(
+                (allergen) => allergen.id == concentration.allergenId,
+              );
 
-        return AllergenCard(
-          allergen: allergen,
-          concentration: concentration.value,
-        );
-      },
+              return AllergenCard(
+                allergen: allergen,
+                concentration: concentration.value,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

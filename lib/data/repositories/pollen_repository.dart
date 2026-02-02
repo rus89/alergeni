@@ -132,6 +132,26 @@ class PollenRepository {
   }
 
   //--------------------------------------------------------------------------
+  Future<PaginatedResponse<Pollens>> fetchRecentPollensByLocation(
+    int locationId, {
+    String? dateAfter,
+  }) async {
+    final response = await http.get(
+      Uri.parse(
+        '$_baseUrl/pollens/?location=$locationId'
+        '${dateAfter != null ? '&date_after=$dateAfter' : ''}',
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return PaginatedResponse.fromJson(data, Pollens.fromJson);
+    } else {
+      throw Exception('Failed to load recent pollens for location $locationId');
+    }
+  }
+
+  //--------------------------------------------------------------------------
   Future<PaginatedResponse<Pollens>> fetchPollensByDate(
     String date, {
     int page = 1,
