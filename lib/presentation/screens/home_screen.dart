@@ -1,9 +1,10 @@
-//--------------------------------------------------------------------------
 import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/data/models/concentrations.dart';
 import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/data/models/pollens.dart';
 import 'package:alergeni/data/repositories/pollen_repository.dart';
+import 'package:alergeni/presentation/widgets/allergen_card.dart';
+import 'package:alergeni/presentation/widgets/off_season_message.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -107,7 +108,9 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       // Step 3: Get the first (most recent) pollen record
-      final pollen = pollensResponse.results.first;
+      final sortedPollens = pollensResponse.results.toList()
+        ..sort((a, b) => b.date.compareTo(a.date));
+      final pollen = sortedPollens.first;
 
       // Step 4: Fetch concentrations for this pollen record
       final concentrations = await _pollenRepository.fetchConcentrationsByIds(
@@ -118,7 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _pollen = pollen;
         _concentrations = concentrations;
-        selectedDate = pollen.date.toString(); // We'll format this nicely later
+        selectedDate =
+            '${pollen.date.day.toString().padLeft(2, '0')}.${pollen.date.month.toString().padLeft(2, '0')}.${pollen.date.year}.';
         _isLoadingPollenData = false;
       });
     } catch (e) {
@@ -197,6 +201,11 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 16.0),
 
           // Date display
+          if (selectedDate != null)
+            Text(
+              'Podaci za datum: $selectedDate',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
 
           // Allergen list
           Expanded(
@@ -213,19 +222,35 @@ class _HomeScreenState extends State<HomeScreen> {
 
   //--------------------------------------------------------------------------
   Widget _buildAllergenList() {
-    if (_allergens == null || _allergens!.isEmpty) {
+    if (_isLoadingPollenData) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_concentrations == null || _concentrations!.isEmpty) {
+      return const OffSeasonMessage();
+    }
+
+    final activeConcentrations = _concentrations!
+        .where((conc) => conc.value > 0)
+        .toList();
+
+    if (activeConcentrations.isEmpty) {
       return const Center(
-        child: Text('Nema dostupnih alergena za izabranu lokaciju.'),
+        child: Text('Nema aktivnih koncentracija polena za izabranu lokaciju.'),
       );
     }
 
     return ListView.builder(
-      itemCount: _allergens!.length,
+      itemCount: activeConcentrations.length,
       itemBuilder: (context, index) {
-        final allergen = _allergens![index];
-        return ListTile(
-          title: Text(allergen.localizedName),
-          subtitle: Text(allergen.name),
+        final concentration = activeConcentrations[index];
+        final allergen = _allergens!.firstWhere(
+          (allergen) => allergen.id == concentration.allergenId,
+        );
+
+        return AllergenCard(
+          allergen: allergen,
+          concentration: concentration.value,
         );
       },
     );
