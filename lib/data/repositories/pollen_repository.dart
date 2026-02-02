@@ -117,11 +117,10 @@ class PollenRepository {
 
   //--------------------------------------------------------------------------
   Future<PaginatedResponse<Pollens>> fetchPollensByLocation(
-    int locationId, {
-    int page = 1,
-  }) async {
+    int locationId,
+  ) async {
     final response = await http.get(
-      Uri.parse('$_baseUrl/pollens/?location=$locationId&page=$page'),
+      Uri.parse('$_baseUrl/pollens/?location=$locationId'),
     );
 
     if (response.statusCode == 200) {
@@ -196,6 +195,16 @@ class PollenRepository {
       return Concentrations.fromJson(data);
     } else {
       throw Exception('Failed to load concentration');
+    }
+  }
+
+  //--------------------------------------------------------------------------
+  Future<List<Concentrations>> fetchConcentrationsByIds(List<int> ids) async {
+    try {
+      final futures = ids.map((id) => fetchConcentrationById(id));
+      return Future.wait(futures);
+    } catch (e) {
+      throw Exception('Failed to load concentrations by IDs');
     }
   }
 }
