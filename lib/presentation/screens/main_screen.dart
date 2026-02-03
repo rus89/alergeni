@@ -1,4 +1,5 @@
 import 'package:alergeni/presentation/screens/about_screen.dart';
+import 'package:alergeni/presentation/screens/map_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:alergeni/presentation/screens/home_screen.dart';
 
@@ -16,7 +17,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Placeholder(), // Map - we'll create this later
+    const MapScreen(),
     const AboutScreen(),
   ];
 
