@@ -1,7 +1,6 @@
 import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/data/models/concentrations.dart';
 import 'package:alergeni/data/models/locations.dart';
-import 'package:alergeni/data/models/pollens.dart';
 import 'package:alergeni/data/repositories/pollen_repository.dart';
 import 'package:alergeni/presentation/widgets/allergen_card.dart';
 import 'package:alergeni/presentation/widgets/off_season_message.dart';
@@ -23,7 +22,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _errorMessage;
   Locations? _selectedLocation;
   List<Allergen>? _allergens;
-  Pollens? _pollen;
   List<Concentrations>? _concentrations;
   bool _isLoadingPollenData = false;
   String? selectedDate;
@@ -91,9 +89,10 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       // Step 1: Fetch pollens for location
-      final sixMonthsAgo = DateTime.now().subtract(const Duration(days: 180));
-      final dateAfter =
-          '${sixMonthsAgo.year}-${sixMonthsAgo.month.toString().padLeft(2, '0')}-${sixMonthsAgo.day.toString().padLeft(2, '0')}';
+      // final sixMonthsAgo = DateTime.now().subtract(const Duration(days: 180));
+      // final dateAfter =
+      //     '${sixMonthsAgo.year}-${sixMonthsAgo.month.toString().padLeft(2, '0')}-${sixMonthsAgo.day.toString().padLeft(2, '0')}';
+      final dateAfter = DateTime.now().toIso8601String().split('T').first;
 
       final pollensResponse = await _pollenRepository
           .fetchRecentPollensByLocation(
@@ -105,7 +104,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (pollensResponse.results.isEmpty) {
         // No data - off season or no data for location
         setState(() {
-          _pollen = null;
           _concentrations = null;
           selectedDate = null;
           _isLoadingPollenData = false;
@@ -125,7 +123,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Step 5: Update state with all data
       setState(() {
-        _pollen = pollen;
         _concentrations = concentrations;
         selectedDate =
             '${pollen.date.day.toString().padLeft(2, '0')}.${pollen.date.month.toString().padLeft(2, '0')}.${pollen.date.year}.';
