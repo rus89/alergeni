@@ -1,5 +1,5 @@
 import 'package:alergeni/core/theme/app_theme.dart';
-import 'package:alergeni/presentation/screens/home_screen.dart';
+import 'package:alergeni/presentation/screens/main_screen.dart';
 import 'package:flutter/material.dart';
 
 //--------------------------------------------------------------------------
@@ -17,7 +17,7 @@ class AllergenApp extends StatelessWidget {
       title: 'Udahni',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const HomeScreen(),
+      home: const MainScreen(),
     );
   }
 }
