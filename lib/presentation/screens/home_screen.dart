@@ -277,6 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  //--------------------------------------------------------------------------
   Widget _buildSummaryCard(String title, int count, Color color) {
     return Card(
       elevation: 4,
@@ -339,20 +340,25 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            itemCount: activeConcentrations.length,
-            padding: EdgeInsets.zero,
-            itemBuilder: (context, index) {
-              final concentration = activeConcentrations[index];
-              final allergen = _allergens!.firstWhere(
-                (allergen) => allergen.id == concentration.allergenId,
-              );
-
-              return AllergenCard(
-                allergen: allergen,
-                concentration: concentration.value,
-              );
+          child: RefreshIndicator(
+            onRefresh: () {
+              return _fetchPollenData();
             },
+            child: ListView.builder(
+              itemCount: activeConcentrations.length,
+              padding: EdgeInsets.zero,
+              itemBuilder: (context, index) {
+                final concentration = activeConcentrations[index];
+                final allergen = _allergens!.firstWhere(
+                  (allergen) => allergen.id == concentration.allergenId,
+                );
+
+                return AllergenCard(
+                  allergen: allergen,
+                  concentration: concentration.value,
+                );
+              },
+            ),
           ),
         ),
       ],
