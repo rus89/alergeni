@@ -1,3 +1,4 @@
+import 'package:alergeni/core/theme/app_theme.dart';
 import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/data/models/concentrations.dart';
 import 'package:alergeni/data/models/locations.dart';
@@ -25,6 +26,10 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Concentrations>? _concentrations;
   bool _isLoadingPollenData = false;
   String? selectedDate;
+
+  int lowCount = 0;
+  int mediumCount = 0;
+  int highCount = 0;
 
   //--------------------------------------------------------------------------
   @override
@@ -89,10 +94,10 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       // Step 1: Fetch pollens for location
-      // final sixMonthsAgo = DateTime.now().subtract(const Duration(days: 180));
-      // final dateAfter =
-      //     '${sixMonthsAgo.year}-${sixMonthsAgo.month.toString().padLeft(2, '0')}-${sixMonthsAgo.day.toString().padLeft(2, '0')}';
-      final dateAfter = DateTime.now().toIso8601String().split('T').first;
+      final sixMonthsAgo = DateTime.now().subtract(const Duration(days: 180));
+      final dateAfter =
+          '${sixMonthsAgo.year}-${sixMonthsAgo.month.toString().padLeft(2, '0')}-${sixMonthsAgo.day.toString().padLeft(2, '0')}';
+      // final dateAfter = DateTime.now().toIso8601String().split('T').first;
 
       final pollensResponse = await _pollenRepository
           .fetchRecentPollensByLocation(
@@ -120,6 +125,22 @@ class _HomeScreenState extends State<HomeScreen> {
       final concentrations = await _pollenRepository.fetchConcentrationsByIds(
         pollen.concentrationIds,
       );
+
+      // Reset counts
+      lowCount = 0;
+      mediumCount = 0;
+      highCount = 0;
+
+      // Count concentration levels
+      for (var conc in concentrations) {
+        if (conc.value >= 1 && conc.value <= 10) {
+          lowCount++;
+        } else if (conc.value <= 50) {
+          mediumCount++;
+        } else if (conc.value > 50) {
+          highCount++;
+        }
+      }
 
       // Step 5: Update state with all data
       setState(() {
@@ -210,6 +231,39 @@ class _HomeScreenState extends State<HomeScreen> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
 
+          // Summary cards
+          if (_concentrations != null && _concentrations!.isNotEmpty) ...[
+            const SizedBox(height: 16.0),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSummaryCard(
+                    'Nizak',
+                    lowCount,
+                    AppTheme.severityLow,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildSummaryCard(
+                    'Srednji',
+                    mediumCount,
+                    AppTheme.severityMedium,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildSummaryCard(
+                    'Visok',
+                    highCount,
+                    AppTheme.severityHigh,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16.0),
+          ],
+
           // Allergen list
           Expanded(
             child: _selectedLocation == null
@@ -219,6 +273,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 : _buildAllergenList(),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String title, int count, Color color) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$count',
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
