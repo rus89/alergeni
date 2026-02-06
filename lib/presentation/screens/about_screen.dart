@@ -77,7 +77,9 @@ class AboutScreen extends StatelessWidget {
                 _buildInfoCard(
                   context: context,
                   title: 'Statistika korišćenja',
-                  content: '29 mernih stanica \n 26 praćenih alergena',
+                  content:
+                      '29 mernih stanica \n'
+                      '26 praćenih alergena',
                   icon: Icons.bar_chart,
                 ),
 
