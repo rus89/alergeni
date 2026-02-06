@@ -1,11 +1,12 @@
 import 'dart:convert';
+
 import 'package:alergeni/data/models/allergen.dart';
+import 'package:alergeni/data/models/allergen_types.dart';
 import 'package:alergeni/data/models/concentrations.dart';
 import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/data/models/paginated_response.dart';
 import 'package:alergeni/data/models/pollens.dart';
 import 'package:http/http.dart' as http;
-import 'package:alergeni/data/models/allergen_types.dart';
 
 class PollenRepository {
   static const String _baseUrl = 'http://77.46.150.200/api/opendata';
