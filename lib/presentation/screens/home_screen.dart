@@ -268,10 +268,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   //--------------------------------------------------------------------------
   String _getOverallStatus() {
-    if (highCount > 0) return 'Visok';
-    if (mediumCount > 0) return 'Umeren';
-    if (lowCount > 0) return 'Nizak';
-    return 'Nepoznat';
+    if (highCount > 0) return 'Visoko';
+    if (mediumCount > 0) return 'Umereno';
+    if (lowCount > 0) return 'Nisko';
+    return 'Nepoznato';
   }
 
   //--------------------------------------------------------------------------

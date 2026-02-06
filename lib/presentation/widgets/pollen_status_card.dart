@@ -70,16 +70,7 @@ class PollenStatusCard extends StatelessWidget {
           // Overall status - big text
           Row(
             children: [
-              Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: statusColor,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-              ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 32), // Indent to align with title text
               Text(
                 pollenOverallStatus,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
