@@ -424,6 +424,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   //--------------------------------------------------------------------------
+  Widget _getTypeIcon(int typeId) {
+    switch (typeId) {
+      case 1:
+        return const Icon(Icons.nature, color: Colors.green);
+      case 2:
+        return const Icon(Icons.grass, color: Colors.lightGreen);
+      case 3:
+        return const Icon(Icons.local_florist, color: Colors.orange);
+      default:
+        return const Icon(Icons.all_inclusive, color: Colors.grey);
+    }
+  }
+
+  //--------------------------------------------------------------------------
   Widget _buildAllergenList() {
     if (_isLoadingPollenData) {
       return const Center(child: CircularProgressIndicator());
@@ -491,6 +505,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   'Ostalo';
 
               return ExpansionTile(
+                // add Icon before type name based on typeId (e.g. tree, grass, weed)
+                leading: _getTypeIcon(typeId),
                 title: Text(
                   '$typeName (${concentrationsForType.length})',
                   style: const TextStyle(fontWeight: FontWeight.w600),
