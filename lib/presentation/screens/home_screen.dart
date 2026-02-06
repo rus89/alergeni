@@ -6,6 +6,7 @@ import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/data/models/pollens.dart';
 import 'package:alergeni/data/repositories/pollen_repository.dart';
 import 'package:alergeni/presentation/widgets/allergen_card.dart';
+import 'package:alergeni/presentation/widgets/pollen_status_card.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -266,6 +267,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   //--------------------------------------------------------------------------
+  String _getOverallStatus() {
+    if (highCount > 0) return 'Visok';
+    if (mediumCount > 0) return 'Umeren';
+    if (lowCount > 0) return 'Nizak';
+    return 'Nepoznat';
+  }
+
+  //--------------------------------------------------------------------------
+  Color _getOverallStatusColor() {
+    if (highCount > 0) return AppTheme.severityHigh;
+    if (mediumCount > 0) return AppTheme.severityMedium;
+    if (lowCount > 0) return AppTheme.severityLow;
+    return AppTheme.textSecondary;
+  }
+
+  //--------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -332,6 +349,17 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16.0),
 
+          // hero card display
+          if (_selectedLocation != null && selectedDate != null)
+            PollenStatusCard(
+              locationName: _selectedLocation!.name,
+              locationDescription: _selectedLocation!.description,
+              date: selectedDate!,
+              pollenOverallStatus: _getOverallStatus(),
+              statusColor: _getOverallStatusColor(),
+              isHistorical: _isShowingHistoricalData,
+            ),
+          const SizedBox(height: 16.0),
           // Date display
           if (selectedDate != null)
             Text(
@@ -343,7 +371,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontStyle: _isShowingHistoricalData ? FontStyle.italic : null,
               ),
             ),
-
           // Summary cards
           if (_concentrations != null && _concentrations!.isNotEmpty) ...[
             const SizedBox(height: 16.0),
