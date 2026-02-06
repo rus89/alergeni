@@ -55,7 +55,7 @@ class PollenStatusCard extends StatelessWidget {
               const Icon(Icons.eco, color: Colors.white, size: 24),
               const SizedBox(width: 8),
               Text(
-                'Stanje polena',
+                'Opšte Stanje polena',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Colors.white.withAlpha(
                     230,

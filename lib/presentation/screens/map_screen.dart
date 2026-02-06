@@ -53,7 +53,10 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mapa mernih stanica')),
+      appBar: AppBar(
+        title: const Text('Mapa mernih stanica'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
