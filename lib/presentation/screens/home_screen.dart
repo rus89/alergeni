@@ -1,141 +1,18 @@
 import 'package:alergeni/core/theme/app_theme.dart';
-import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/data/models/allergen_types.dart';
 import 'package:alergeni/data/models/concentrations.dart';
 import 'package:alergeni/data/models/locations.dart';
-import 'package:alergeni/data/models/pollens.dart';
-import 'package:alergeni/data/repositories/pollen_repository.dart';
+import 'package:alergeni/presentation/viewmodels/home_view_model.dart';
 import 'package:alergeni/presentation/widgets/allergen_card.dart';
 import 'package:alergeni/presentation/widgets/pollen_status_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-//--------------------------------------------------------------------------
-class _HomeScreenState extends State<HomeScreen> {
-  List<Locations>? _locations;
-  bool _isLoading = true;
-  String? _errorMessage;
-  Locations? _selectedLocation;
-  List<Allergen>? _allergens;
-  List<AllergenTypes>? _allergenTypes;
-  List<Concentrations>? _concentrations;
-  bool _isLoadingPollenData = false;
-  String? selectedDate;
-  bool _hasShownOffSeasonMessage = false;
-  DateTime? _pollenDate;
-
-  int lowCount = 0;
-  int mediumCount = 0;
-  int highCount = 0;
-
   //--------------------------------------------------------------------------
-  bool get _isShowingHistoricalData {
-    if (_pollenDate == null) return false;
-    final now = DateTime.now();
-    final difference = now.difference(_pollenDate!).inDays;
-    return difference > 7;
-  }
-
-  //--------------------------------------------------------------------------
-  @override
-  void initState() {
-    super.initState();
-    _fetchLocations();
-    _fetchAllergens();
-    _fetchAllergenTypes();
-    _checkOffSeason();
-  }
-
-  //--------------------------------------------------------------------------
-  Future<void> _fetchLocations() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
-
-      var pollenRepository = context.read<PollenRepository>();
-      final locations = await pollenRepository.fetchLocations();
-
-      setState(() {
-        _locations = locations;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  //--------------------------------------------------------------------------
-  Future<void> _fetchAllergens() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
-
-      var pollenRepository = context.read<PollenRepository>();
-      final allergens = await pollenRepository.fetchAllergens();
-
-      setState(() {
-        _allergens = allergens;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  //--------------------------------------------------------------------------
-  Future<void> _fetchAllergenTypes() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
-
-      var pollenRepository = context.read<PollenRepository>();
-      final allergenTypes = await pollenRepository.fetchAllergenTypes();
-
-      setState(() {
-        _allergenTypes = allergenTypes;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  //--------------------------------------------------------------------------
-  void _checkOffSeason() {
-    final now = DateTime.now();
-    final isOffSeason = (now.month >= 10 || now.month <= 1);
-
-    if (isOffSeason && !_hasShownOffSeasonMessage) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showOffSeasonDialog();
-      });
-    }
-  }
-
-  //--------------------------------------------------------------------------
-  void _showOffSeasonDialog() {
+  void _showOffSeasonDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -149,9 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              setState(() {
-                _hasShownOffSeasonMessage = true;
-              });
+              context.read<HomeViewModel>().markOffSeasonDialogShown = true;
             },
             child: const Text('OK'),
           ),
@@ -161,159 +36,45 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   //--------------------------------------------------------------------------
-  Future<void> _fetchPollenData() async {
-    if (_selectedLocation == null) return;
-
-    try {
-      setState(() {
-        _isLoadingPollenData = true;
-        _errorMessage = null;
-      });
-
-      // Step 1: Try to get today's pollen data for the selected location
-      final today = DateTime.now();
-      final todayStr =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-      var pollenRepository = context.read<PollenRepository>();
-      var pollensResponse = await pollenRepository
-          .fetchPollensByLocationAndDate(_selectedLocation!.id, todayStr);
-
-      Pollens? pollen;
-
-      if (pollensResponse.results.isNotEmpty) {
-        pollen = pollensResponse.results.first;
-      } else {
-        // If no data for today, try to get the most recent data for this location
-        final lastYear = today.year - 1;
-        final dateAfter = '$lastYear-01-01';
-        pollensResponse = await pollenRepository.fetchRecentPollensByLocation(
-          _selectedLocation!.id,
-          dateAfter: dateAfter,
-        );
-      }
-
-      if (pollensResponse.results.isEmpty) {
-        // No data - off season or no data for location
-        final twoYearsAgo = today.year - 2;
-        final dateAfter = '$twoYearsAgo-01-01';
-        pollensResponse = await pollenRepository.fetchRecentPollensByLocation(
-          _selectedLocation!.id,
-          dateAfter: dateAfter,
-        );
-      }
-
-      if (pollensResponse.results.isEmpty) {
-        setState(() {
-          _concentrations = null;
-          selectedDate = null;
-          _isLoadingPollenData = false;
-        });
-        return;
-      }
-
-      List<Concentrations> concentrations = [];
-
-      // sort by date descending to get the most recent record
-      final sortedPollens = pollensResponse.results.toList()
-        ..sort((a, b) => b.date.compareTo(a.date));
-      for (var p in sortedPollens) {
-        if (p.concentrationIds.isNotEmpty) {
-          pollen = p;
-          concentrations = await pollenRepository.fetchConcentrationsByIds(
-            pollen.concentrationIds,
-          );
-
-          if (concentrations.any((c) => c.value > 0)) {
-            break;
-          }
-        }
-      }
-
-      if (pollen == null || concentrations.isEmpty) {
-        setState(() {
-          _concentrations = null;
-          selectedDate = null;
-          _isLoadingPollenData = false;
-        });
-        return;
-      }
-
-      // Step 3: Count severity levels
-      lowCount = 0;
-      mediumCount = 0;
-      highCount = 0;
-
-      for (var conc in concentrations) {
-        if (conc.value >= 1 && conc.value <= 10) {
-          lowCount++;
-        } else if (conc.value >= 11 && conc.value <= 50) {
-          mediumCount++;
-        } else if (conc.value > 50) {
-          highCount++;
-        }
-      }
-
-      // Step 5: Update state with all data
-      setState(() {
-        _concentrations = concentrations;
-        _pollenDate = pollen!.date;
-        selectedDate =
-            '${pollen.date.day.toString().padLeft(2, '0')}.${pollen.date.month.toString().padLeft(2, '0')}.${pollen.date.year}.';
-        _isLoadingPollenData = false;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoadingPollenData = false;
-      });
-    }
-  }
-
-  //--------------------------------------------------------------------------
-  String _getOverallStatus() {
-    if (highCount > 0) return 'Visoko';
-    if (mediumCount > 0) return 'Umereno';
-    if (lowCount > 0) return 'Nisko';
-    return 'Nepoznato';
-  }
-
-  //--------------------------------------------------------------------------
-  Color _getOverallStatusColor() {
-    if (highCount > 0) return AppTheme.severityHigh;
-    if (mediumCount > 0) return AppTheme.severityMedium;
-    if (lowCount > 0) return AppTheme.severityLow;
-    return AppTheme.textSecondary;
-  }
-
-  //--------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final viewModel = context.read<HomeViewModel>();
+      if (viewModel.shouldShowOffSeasonDialog) {
+        viewModel.markOffSeasonDialogShown = true;
+        _showOffSeasonDialog(context);
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Udahni'),
+        title: const Text('Početna'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: _buildBody(),
+      body: _buildBody(context, context.watch<HomeViewModel>()),
     );
   }
 
   //--------------------------------------------------------------------------
-  Widget _buildBody() {
-    if (_isLoading) {
+  Widget _buildBody(BuildContext context, HomeViewModel viewModel) {
+    if (viewModel.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_errorMessage != null) {
+    if (viewModel.errorMessage != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error_outline, color: Colors.red, size: 48),
             const SizedBox(height: 16),
-            Text('Greška: $_errorMessage', textAlign: TextAlign.center),
+            Text(
+              'Greška: ${viewModel.errorMessage}',
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _fetchLocations,
+              onPressed: viewModel.fetchLocations,
               child: const Text('Pokušaj ponovo'),
             ),
           ],
@@ -321,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    if (_locations == null || _locations!.isEmpty) {
+    if (viewModel.locations == null || viewModel.locations!.isEmpty) {
       return const Center(child: Text('Nema dostupnih lokacija.'));
     }
 
@@ -333,9 +94,9 @@ class _HomeScreenState extends State<HomeScreen> {
           // Location dropdown
           DropdownButton<Locations>(
             hint: const Text('Izaberi lokaciju'),
-            value: _selectedLocation,
+            value: viewModel.selectedLocation,
             isExpanded: true,
-            items: _locations!
+            items: viewModel.locations!
                 .map(
                   (loc) => DropdownMenuItem<Locations>(
                     value: loc,
@@ -344,38 +105,41 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
                 .toList(),
             onChanged: (loc) {
-              setState(() {
-                _selectedLocation = loc;
-              });
-              _fetchPollenData();
+              viewModel.selectLocation(loc!);
             },
           ),
           const SizedBox(height: 16.0),
 
           // hero card display
-          if (_selectedLocation != null && selectedDate != null)
+          if (viewModel.selectedLocation != null &&
+              viewModel.selectedDate != null)
             PollenStatusCard(
-              locationName: _selectedLocation!.name,
-              locationDescription: _selectedLocation!.description,
-              date: selectedDate!,
-              pollenOverallStatus: _getOverallStatus(),
-              statusColor: _getOverallStatusColor(),
-              isHistorical: _isShowingHistoricalData,
+              locationName: viewModel.selectedLocation!.name,
+              locationDescription: viewModel.selectedLocation!.description,
+              date: viewModel.selectedDate!,
+              pollenOverallStatus: viewModel.getOverallStatus(),
+              statusColor: viewModel.getOverallStatusColor(),
+              isHistorical: viewModel.isShowingHistoricalData,
             ),
           const SizedBox(height: 16.0),
           // Date display
-          if (selectedDate != null)
+          if (viewModel.selectedDate != null)
             Text(
-              _isShowingHistoricalData
-                  ? 'Poslednji podaci su za datum: $selectedDate'
-                  : 'Podaci za datum: $selectedDate',
+              viewModel.isShowingHistoricalData
+                  ? 'Poslednji podaci su za datum: ${viewModel.selectedDate}'
+                  : 'Podaci za datum: ${viewModel.selectedDate}',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: _isShowingHistoricalData ? Colors.grey[600] : null,
-                fontStyle: _isShowingHistoricalData ? FontStyle.italic : null,
+                color: viewModel.isShowingHistoricalData
+                    ? Colors.grey[600]
+                    : null,
+                fontStyle: viewModel.isShowingHistoricalData
+                    ? FontStyle.italic
+                    : null,
               ),
             ),
           // Summary cards
-          if (_concentrations != null && _concentrations!.isNotEmpty) ...[
+          if (viewModel.concentrations != null &&
+              viewModel.concentrations!.isNotEmpty) ...[
             const SizedBox(height: 16.0),
             const Text(
               'Pregled nivoa koncentracija:',
@@ -387,24 +151,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _buildSummaryCard(
                     'Nizak',
-                    lowCount,
+                    viewModel.lowCount,
                     AppTheme.severityLow,
+                    context,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildSummaryCard(
                     'Srednji',
-                    mediumCount,
+                    viewModel.mediumCount,
                     AppTheme.severityMedium,
+                    context,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildSummaryCard(
                     'Visok',
-                    highCount,
+                    viewModel.highCount,
                     AppTheme.severityHigh,
+                    context,
                   ),
                 ),
               ],
@@ -414,11 +181,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // Allergen list
           Expanded(
-            child: _selectedLocation == null
+            child: viewModel.selectedLocation == null
                 ? const Center(
                     child: Text('Izaberite lokaciju za prikaz podataka.'),
                   )
-                : _buildAllergenList(),
+                : _buildAllergenList(viewModel, context),
           ),
         ],
       ),
@@ -426,7 +193,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   //--------------------------------------------------------------------------
-  Widget _buildSummaryCard(String title, int count, Color color) {
+  Widget _buildSummaryCard(
+    String title,
+    int count,
+    Color color,
+    BuildContext context,
+  ) {
     return Card(
       elevation: 4,
       child: Padding(
@@ -468,18 +240,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   //--------------------------------------------------------------------------
-  Widget _buildAllergenList() {
-    if (_isLoadingPollenData) {
+  Widget _buildAllergenList(HomeViewModel viewModel, BuildContext context) {
+    if (viewModel.isLoadingPollenData) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_concentrations == null || _concentrations!.isEmpty) {
+    if (viewModel.concentrations == null || viewModel.concentrations!.isEmpty) {
       return const Center(
         child: Text('Nema aktivnih koncentracija polena za izabranu lokaciju.'),
       );
     }
 
-    final activeConcentrations = _concentrations!
+    final activeConcentrations = viewModel.concentrations!
         .where((conc) => conc.value > 0)
         .toList();
 
@@ -493,13 +265,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final Map<int, List<Concentrations>> groupedByType = {};
     for (var conc in activeConcentrations) {
-      final allergen = _allergens!.firstWhere((a) => a.id == conc.allergenId);
+      final allergen = viewModel.allergens!.firstWhere(
+        (a) => a.id == conc.allergenId,
+      );
       final typeId = allergen.type;
       groupedByType.putIfAbsent(typeId, () => []).add(conc);
     }
 
     return RefreshIndicator(
-      onRefresh: _fetchPollenData,
+      onRefresh: viewModel.fetchPollenData,
       child: SingleChildScrollView(
         physics:
             const AlwaysScrollableScrollPhysics(), // Important! Allows pull even when content fits
@@ -526,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Find the type name
               final typeName =
-                  _allergenTypes
+                  viewModel.allergenTypes
                       ?.firstWhere(
                         (t) => t.id == typeId,
                         orElse: () => AllergenTypes(id: typeId, name: 'Ostalo'),
@@ -544,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 initiallyExpanded:
                     true, // Or false if you want collapsed by default
                 children: concentrationsForType.map((conc) {
-                  final allergen = _allergens!.firstWhere(
+                  final allergen = viewModel.allergens!.firstWhere(
                     (a) => a.id == conc.allergenId,
                   );
                   return AllergenCard(

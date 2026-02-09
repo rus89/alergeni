@@ -1,14 +1,24 @@
 import 'package:alergeni/core/theme/app_theme.dart';
 import 'package:alergeni/data/repositories/pollen_repository.dart';
 import 'package:alergeni/presentation/screens/main_screen.dart';
+import 'package:alergeni/presentation/viewmodels/home_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 //--------------------------------------------------------------------------
 void main() {
+  final pollenRepository = PollenRepository();
+
   runApp(
-    Provider<PollenRepository>(
-      create: (_) => PollenRepository(),
+    MultiProvider(
+      providers: [
+        Provider<PollenRepository>.value(value: pollenRepository),
+        ChangeNotifierProvider(
+          create: (_) =>
+              HomeViewModel(pollenRepository: pollenRepository)
+                ..loadInitialData(),
+        ),
+      ],
       child: const AllergenApp(),
     ),
   );
