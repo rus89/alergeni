@@ -3,6 +3,7 @@ import 'package:alergeni/data/repositories/pollen_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 
 //--------------------------------------------------------------------------
 class MapScreen extends StatefulWidget {
@@ -14,7 +15,6 @@ class MapScreen extends StatefulWidget {
 
 //--------------------------------------------------------------------------
 class _MapScreenState extends State<MapScreen> {
-  final PollenRepository _pollenRepository = PollenRepository();
   final MapController _mapController = MapController();
 
   List<Locations>? _locations;
@@ -36,7 +36,8 @@ class _MapScreenState extends State<MapScreen> {
         _errorMessage = null;
       });
 
-      final locations = await _pollenRepository.fetchLocations();
+      var pollenRepository = context.read<PollenRepository>();
+      final locations = await pollenRepository.fetchLocations();
 
       setState(() {
         _locations = locations;

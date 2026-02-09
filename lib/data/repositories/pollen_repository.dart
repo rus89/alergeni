@@ -1,135 +1,71 @@
-import 'dart:convert';
-
 import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/data/models/allergen_types.dart';
 import 'package:alergeni/data/models/concentrations.dart';
 import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/data/models/paginated_response.dart';
 import 'package:alergeni/data/models/pollens.dart';
-import 'package:http/http.dart' as http;
+import 'package:alergeni/data/services/pollen_api_service.dart';
 
 class PollenRepository {
-  static const String _baseUrl = 'http://77.46.150.200/api/opendata';
+  final PollenApiService _apiService;
+
+  PollenRepository({PollenApiService? apiService})
+    : _apiService = apiService ?? PollenApiService();
 
   //--------------------------------------------------------------------------
   Future<List<AllergenTypes>> fetchAllergenTypes() async {
-    final response = await http.get(Uri.parse('$_baseUrl/allergen-types/'));
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data
-          .map((json) => AllergenTypes.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } else {
-      throw Exception('Failed to load allergen types');
-    }
+    final response = await _apiService.fetchAllergenTypes();
+    return response;
   }
 
   //--------------------------------------------------------------------------
   Future<AllergenTypes> fetchAllergenTypeById(int id) async {
-    final response = await http.get(Uri.parse('$_baseUrl/allergen-types/$id/'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return AllergenTypes.fromJson(data);
-    } else {
-      throw Exception('Failed to load allergen type');
-    }
+    final response = await _apiService.fetchAllergenTypeById(id);
+    return response;
   }
 
   //--------------------------------------------------------------------------
   Future<List<Allergen>> fetchAllergens() async {
-    final response = await http.get(Uri.parse('$_baseUrl/allergens/'));
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data
-          .map((json) => Allergen.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } else {
-      throw Exception('Failed to load allergens');
-    }
+    final response = await _apiService.fetchAllergens();
+    return response;
   }
 
   //--------------------------------------------------------------------------
   Future<Allergen> fetchAllergenById(int id) async {
-    final response = await http.get(Uri.parse('$_baseUrl/allergens/$id/'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return Allergen.fromJson(data);
-    } else {
-      throw Exception('Failed to load allergen');
-    }
+    final response = await _apiService.fetchAllergenById(id);
+    return response;
   }
 
   //--------------------------------------------------------------------------
   Future<List<Locations>> fetchLocations() async {
-    final response = await http.get(Uri.parse('$_baseUrl/locations/'));
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      return data
-          .map((json) => Locations.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } else {
-      throw Exception('Failed to load locations');
-    }
+    final response = await _apiService.fetchLocations();
+    return response;
   }
 
   //--------------------------------------------------------------------------
   Future<Locations> fetchLocationById(int id) async {
-    final response = await http.get(Uri.parse('$_baseUrl/locations/$id/'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return Locations.fromJson(data);
-    } else {
-      throw Exception('Failed to load location');
-    }
+    final response = await _apiService.fetchLocationById(id);
+    return response;
   }
 
   //--------------------------------------------------------------------------
   Future<PaginatedResponse<Pollens>> fetchPollens({int page = 1}) async {
-    final response = await http.get(Uri.parse('$_baseUrl/pollens/?page=$page'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return PaginatedResponse<Pollens>.fromJson(
-        data,
-        (json) => Pollens.fromJson(json),
-      );
-    } else {
-      throw Exception('Failed to load pollens');
-    }
+    final response = await _apiService.fetchPollens(page: page);
+    return response;
   }
 
   //--------------------------------------------------------------------------
   Future<Pollens> fetchPollenById(int id) async {
-    final response = await http.get(Uri.parse('$_baseUrl/pollens/$id/'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return Pollens.fromJson(data);
-    } else {
-      throw Exception('Failed to load pollen');
-    }
+    final response = await _apiService.fetchPollenById(id);
+    return response;
   }
 
   //--------------------------------------------------------------------------
   Future<PaginatedResponse<Pollens>> fetchPollensByLocation(
     int locationId,
   ) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/pollens/?location=$locationId'),
-    );
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return PaginatedResponse.fromJson(data, Pollens.fromJson);
-    } else {
-      throw Exception('Failed to load pollens for location $locationId');
-    }
+    final response = await _apiService.fetchPollensByLocation(locationId);
+    return response;
   }
 
   //--------------------------------------------------------------------------
@@ -137,19 +73,11 @@ class PollenRepository {
     int locationId, {
     String? dateAfter,
   }) async {
-    final response = await http.get(
-      Uri.parse(
-        '$_baseUrl/pollens/?location=$locationId'
-        '${dateAfter != null ? '&date_after=$dateAfter' : ''}',
-      ),
+    final response = await _apiService.fetchRecentPollensByLocation(
+      locationId,
+      dateAfter: dateAfter,
     );
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return PaginatedResponse.fromJson(data, Pollens.fromJson);
-    } else {
-      throw Exception('Failed to load recent pollens for location $locationId');
-    }
+    return response;
   }
 
   //--------------------------------------------------------------------------
@@ -157,16 +85,8 @@ class PollenRepository {
     String date, {
     int page = 1,
   }) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/pollens/?date=$date&page=$page'),
-    );
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return PaginatedResponse.fromJson(data, Pollens.fromJson);
-    } else {
-      throw Exception('Failed to load pollens for date $date');
-    }
+    final response = await _apiService.fetchPollensByDate(date, page: page);
+    return response;
   }
 
   //--------------------------------------------------------------------------
@@ -175,48 +95,26 @@ class PollenRepository {
     String date, {
     int page = 1,
   }) async {
-    final response = await http.get(
-      Uri.parse(
-        '$_baseUrl/pollens/?location=$locationId&date=$date&page=$page',
-      ),
+    final response = await _apiService.fetchPollensByLocationAndDate(
+      locationId,
+      date,
+      page: page,
     );
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return PaginatedResponse.fromJson(data, Pollens.fromJson);
-    } else {
-      throw Exception(
-        'Failed to load pollens for location $locationId and date $date',
-      );
-    }
+    return response;
   }
 
   //--------------------------------------------------------------------------
   Future<PaginatedResponse<Concentrations>> fetchConcentrations({
     int page = 1,
   }) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/concentrations/?page=$page'),
-    );
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return PaginatedResponse.fromJson(data, Concentrations.fromJson);
-    } else {
-      throw Exception('Failed to load concentrations');
-    }
+    final response = await _apiService.fetchConcentrations(page: page);
+    return response;
   }
 
   //--------------------------------------------------------------------------
   Future<Concentrations> fetchConcentrationById(int id) async {
-    final response = await http.get(Uri.parse('$_baseUrl/concentrations/$id/'));
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return Concentrations.fromJson(data);
-    } else {
-      throw Exception('Failed to load concentration');
-    }
+    final response = await _apiService.fetchConcentrationById(id);
+    return response;
   }
 
   //--------------------------------------------------------------------------

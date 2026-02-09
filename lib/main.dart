@@ -1,10 +1,17 @@
 import 'package:alergeni/core/theme/app_theme.dart';
+import 'package:alergeni/data/repositories/pollen_repository.dart';
 import 'package:alergeni/presentation/screens/main_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 //--------------------------------------------------------------------------
 void main() {
-  runApp(const AllergenApp());
+  runApp(
+    Provider<PollenRepository>(
+      create: (_) => PollenRepository(),
+      child: const AllergenApp(),
+    ),
+  );
 }
 
 //--------------------------------------------------------------------------

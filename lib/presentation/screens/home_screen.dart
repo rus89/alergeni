@@ -8,6 +8,7 @@ import 'package:alergeni/data/repositories/pollen_repository.dart';
 import 'package:alergeni/presentation/widgets/allergen_card.dart';
 import 'package:alergeni/presentation/widgets/pollen_status_card.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,8 +19,6 @@ class HomeScreen extends StatefulWidget {
 
 //--------------------------------------------------------------------------
 class _HomeScreenState extends State<HomeScreen> {
-  final PollenRepository _pollenRepository = PollenRepository();
-
   List<Locations>? _locations;
   bool _isLoading = true;
   String? _errorMessage;
@@ -62,7 +61,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _errorMessage = null;
       });
 
-      final locations = await _pollenRepository.fetchLocations();
+      var pollenRepository = context.read<PollenRepository>();
+      final locations = await pollenRepository.fetchLocations();
 
       setState(() {
         _locations = locations;
@@ -84,7 +84,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _errorMessage = null;
       });
 
-      final allergens = await _pollenRepository.fetchAllergens();
+      var pollenRepository = context.read<PollenRepository>();
+      final allergens = await pollenRepository.fetchAllergens();
 
       setState(() {
         _allergens = allergens;
@@ -106,7 +107,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _errorMessage = null;
       });
 
-      final allergenTypes = await _pollenRepository.fetchAllergenTypes();
+      var pollenRepository = context.read<PollenRepository>();
+      final allergenTypes = await pollenRepository.fetchAllergenTypes();
 
       setState(() {
         _allergenTypes = allergenTypes;
@@ -172,7 +174,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final today = DateTime.now();
       final todayStr =
           '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-      var pollensResponse = await _pollenRepository
+      var pollenRepository = context.read<PollenRepository>();
+      var pollensResponse = await pollenRepository
           .fetchPollensByLocationAndDate(_selectedLocation!.id, todayStr);
 
       Pollens? pollen;
@@ -183,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // If no data for today, try to get the most recent data for this location
         final lastYear = today.year - 1;
         final dateAfter = '$lastYear-01-01';
-        pollensResponse = await _pollenRepository.fetchRecentPollensByLocation(
+        pollensResponse = await pollenRepository.fetchRecentPollensByLocation(
           _selectedLocation!.id,
           dateAfter: dateAfter,
         );
@@ -193,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // No data - off season or no data for location
         final twoYearsAgo = today.year - 2;
         final dateAfter = '$twoYearsAgo-01-01';
-        pollensResponse = await _pollenRepository.fetchRecentPollensByLocation(
+        pollensResponse = await pollenRepository.fetchRecentPollensByLocation(
           _selectedLocation!.id,
           dateAfter: dateAfter,
         );
@@ -216,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
       for (var p in sortedPollens) {
         if (p.concentrationIds.isNotEmpty) {
           pollen = p;
-          concentrations = await _pollenRepository.fetchConcentrationsByIds(
+          concentrations = await pollenRepository.fetchConcentrationsByIds(
             pollen.concentrationIds,
           );
 

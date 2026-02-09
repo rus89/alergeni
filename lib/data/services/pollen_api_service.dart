@@ -1,21 +1,3 @@
-/*
-
-GET /api/opendata/allergen-types/ -> returns List<AllergenTypes>
-GET /api/opendata/allergen-types/{id}/ -> returns AllergenTypes
-GET /api/opendata/allergens/ -> returns List<Allergens>
-GET /api/opendata/locations/ -> returns List<Locations>
-GET /api/opendata/locations/{id}/ -> returns Locations
-GET /api/opendata/pollens/?page={page} -> returns PaginatedResponse<Pollens>
-GET /api/opendata/pollens/{id}/ -> returns Pollens
-GET /api/opendata/pollens/?location={location_id} -> returns PaginatedResponse<Pollens>
-GET /api/opendata/pollens/?location={location_id}&dateAfter={date_after} -> returns PaginatedResponse<Pollens>
-GET /api/opendata/pollens/?date={date}&page={page} -> returns PaginatedResponse<Pollens>
-GET /api/opendata/pollens/?location={location_id}&date={date}&page={page} -> returns PaginatedResponse<Pollens>
-GET /api/opendata/allergens/{id}/ -> returns Allergens
-GET /api/opendata/concentrations/?page={page} -> returns PaginatedResponse<Concentrations>
-GET /api/opendata/concentrations/{id}/ -> returns Concentrations
-*/
-
 import 'dart:convert';
 
 import 'package:alergeni/data/models/allergen.dart';
