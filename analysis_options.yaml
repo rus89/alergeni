@@ -1,1 +1,8 @@
 include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - prefer_const_constructors
+    - prefer_const_constructors_in_immutables
+    - unawaited_futures
+    - always_declare_return_types
