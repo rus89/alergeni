@@ -1,72 +1,122 @@
 import 'package:alergeni/data/models/locations.dart';
-import 'package:alergeni/data/repositories/pollen_repository.dart';
+import 'package:alergeni/presentation/viewmodels/map_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 //--------------------------------------------------------------------------
-class MapScreen extends StatefulWidget {
+class MapScreen extends StatelessWidget {
   const MapScreen({super.key});
 
   @override
-  State<MapScreen> createState() => _MapScreenState();
-}
-
-//--------------------------------------------------------------------------
-class _MapScreenState extends State<MapScreen> {
-  final MapController _mapController = MapController();
-
-  List<Locations>? _locations;
-  bool _isLoading = true;
-  String? _errorMessage;
-
-  //--------------------------------------------------------------------------
-  @override
-  void initState() {
-    super.initState();
-    _fetchLocations();
-  }
-
-  //--------------------------------------------------------------------------
-  Future<void> _fetchLocations() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
-
-      var pollenRepository = context.read<PollenRepository>();
-      final locations = await pollenRepository.fetchLocations();
-
-      setState(() {
-        _locations = locations;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final mapViewModel = context.watch<MapViewModel>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mapa mernih stanica'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: _isLoading
+      body: mapViewModel.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _errorMessage != null
-          ? Center(child: Text('Greška: $_errorMessage'))
-          : _locations == null || _locations!.isEmpty
+          : mapViewModel.errorMessage != null
+          ? _buildErrorView(context, mapViewModel)
+          : mapViewModel.locations == null || mapViewModel.locations!.isEmpty
           ? const Center(child: Text('Nema dostupnih lokacija.'))
-          : _buildMapView(),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
+          : _MapView(locations: mapViewModel.locations!),
+    );
+  }
+
+  //--------------------------------------------------------------------------
+  Widget _buildErrorView(BuildContext context, MapViewModel viewModel) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, color: Colors.red, size: 48),
+          const SizedBox(height: 16),
+          Text(
+            'Greška: ${viewModel.errorMessage}',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: viewModel.refreshLocations,
+            child: const Text('Pokušaj ponovo'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+//--------------------------------------------------------------------------
+class _MapView extends StatefulWidget {
+  final List<Locations> locations;
+
+  const _MapView({required this.locations});
+
+  @override
+  State<_MapView> createState() => _MapViewState();
+}
+
+//--------------------------------------------------------------------------
+class _MapViewState extends State<_MapView> {
+  final MapController _mapController = MapController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        FlutterMap(
+          mapController: _mapController,
+          options: const MapOptions(
+            initialCenter: LatLng(44.0165, 21.0059),
+            initialZoom: 7.0,
+            minZoom: 6.5,
+            maxZoom: 18.0,
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.alergeni',
+              maxZoom: 19,
+            ),
+            MarkerLayer(
+              markers: widget.locations.map((location) {
+                return Marker(
+                  point: LatLng(
+                    double.tryParse(location.latitude) ?? 0.0,
+                    double.tryParse(location.longitude) ?? 0.0,
+                  ),
+                  width: 40,
+                  height: 40,
+                  child: GestureDetector(
+                    onTap: () => _showLocationInfo(context, location),
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                      size: 40,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+        _buildFloatingControls(),
+      ],
+    );
+  }
+
+  //--------------------------------------------------------------------------
+  Widget _buildFloatingControls() {
+    return Positioned(
+      right: 16,
+      bottom: 16,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           FloatingActionButton(
             heroTag: 'zoom_in',
@@ -105,157 +155,8 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildMapView() {
-    return Stack(
-      children: [
-        FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            // Center on Serbia
-            initialCenter: const LatLng(44.0165, 21.0059),
-            initialZoom: 7.0,
-            minZoom: 6.5,
-            maxZoom: 18.0,
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.alergeni',
-              maxZoom: 19,
-            ),
-            MarkerLayer(
-              markers: _locations!.map((location) {
-                return Marker(
-                  point: LatLng(
-                    double.tryParse(location.latitude) ?? 0.0,
-                    double.tryParse(location.longitude) ?? 0.0,
-                  ),
-                  width: 40,
-                  height: 40,
-                  child: GestureDetector(
-                    onTap: () => _showLocationInfo(location),
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Colors.red, // or AppTheme.primaryGreen
-                      size: 40,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-
-            // MarkerClusterLayerWidget(
-            //   options: MarkerClusterLayerOptions(
-            //     maxClusterRadius: 80,
-            //     size: const Size(50, 50),
-            //     markers: markers,
-            //     builder: (context, markers) {
-            //       // Custom cluster builder
-            //       return Container(
-            //         decoration: BoxDecoration(
-            //           shape: BoxShape.circle,
-            //           color: Colors.blue.shade600,
-            //           border: Border.all(color: Colors.white, width: 3),
-            //         ),
-            //         child: Center(
-            //           child: Text(
-            //             markers.length.toString(),
-            //             style: const TextStyle(
-            //               color: Colors.white,
-            //               fontWeight: FontWeight.bold,
-            //               fontSize: 16,
-            //             ),
-            //           ),
-            //         ),
-            //       );
-            //     },
-            //   ),
-            // ),
-          ],
-        ),
-        // // Legend
-        // Positioned(bottom: 20, left: 20, child: _buildLegend()),
-        // // Filters card (floating)
-        // Positioned(
-        //   top: 10,
-        //   left: 10,
-        //   right: 10,
-        //   child: Card(
-        //     shape: RoundedRectangleBorder(
-        //       borderRadius: BorderRadius.circular(12),
-        //     ),
-        //     elevation: 4,
-        //     child: Padding(
-        //       padding: const EdgeInsets.all(12),
-        //       child: Column(
-        //         mainAxisSize: MainAxisSize.min,
-        //         children: [
-        //           DropdownButtonFormField<int>(
-        //             initialValue: state.selectedYear,
-        //             decoration: const InputDecoration(
-        //               labelText: 'Izaberite godinu',
-        //               prefixIcon: Icon(Icons.calendar_today),
-        //               border: OutlineInputBorder(),
-        //               isDense: true,
-        //             ),
-        //             items: state.availableYears.map((year) {
-        //               return DropdownMenuItem(
-        //                 value: year,
-        //                 child: Text(year.toString()),
-        //               );
-        //             }).toList(),
-        //             onChanged: (year) async {
-        //               if (year == null) return;
-        //               setState(() => _isLoading = true);
-        //               ref.read(trafficProvider.notifier).setYear(year);
-        //               await ref
-        //                   .read(trafficProvider.notifier)
-        //                   .loadAccidents();
-        //               if (mounted) setState(() => _isLoading = false);
-        //             },
-        //           ),
-        //           const SizedBox(height: 8),
-        //           DropdownButtonFormField<String?>(
-        //             initialValue: state.selectedDept,
-        //             decoration: const InputDecoration(
-        //               labelText: 'Izaberite policijsku upravu',
-        //               prefixIcon: Icon(Icons.location_city),
-        //               border: OutlineInputBorder(),
-        //               isDense: true,
-        //             ),
-        //             items: [
-        //               const DropdownMenuItem(
-        //                 value: null,
-        //                 child: Text('Sve policijske uprave'),
-        //               ),
-        //               ...state.departments.map(
-        //                 (dept) => DropdownMenuItem(
-        //                   value: dept,
-        //                   child: Text(dept),
-        //                 ),
-        //               ),
-        //             ],
-        //             onChanged: (dept) async {
-        //               setState(() => _isLoading = true);
-        //               ref
-        //                   .read(trafficProvider.notifier)
-        //                   .setDepartment(dept);
-        //               await ref
-        //                   .read(trafficProvider.notifier)
-        //                   .loadAccidents();
-        //               if (mounted) setState(() => _isLoading = false);
-        //             },
-        //           ),
-        //         ],
-        //       ),
-        //     ),
-        //   ),
-        // ),
-      ],
-    );
-  }
-
-  void _showLocationInfo(Locations location) {
+  //--------------------------------------------------------------------------
+  void _showLocationInfo(BuildContext context, Locations location) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Padding(
