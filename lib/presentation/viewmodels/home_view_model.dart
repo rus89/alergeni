@@ -1,3 +1,4 @@
+import 'package:alergeni/core/constants/severity_thresholds.dart';
 import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/data/models/allergen_types.dart';
 import 'package:alergeni/data/models/concentrations.dart';
@@ -251,11 +252,13 @@ class HomeViewModel extends ChangeNotifier {
       _highCount = 0;
 
       for (var conc in concentrations) {
-        if (conc.value >= 1 && conc.value <= 10) {
+        if (conc.value >= SeverityThresholds.lowMin &&
+            conc.value <= SeverityThresholds.lowMax) {
           _lowCount++;
-        } else if (conc.value >= 11 && conc.value <= 50) {
+        } else if (conc.value >= SeverityThresholds.mediumMin &&
+            conc.value <= SeverityThresholds.mediumMax) {
           _mediumCount++;
-        } else if (conc.value > 50) {
+        } else if (conc.value >= SeverityThresholds.highMin) {
           _highCount++;
         }
       }
