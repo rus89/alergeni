@@ -26,4 +26,14 @@ class AllergenTypeHelper {
       _ => 'Nepoznato',
     };
   }
+
+  //--------------------------------------------------------------------------
+  static Color getColorForType(int typeId) {
+    return switch (typeId) {
+      treeTypeId => Colors.green,
+      grassTypeId => Colors.lightGreen,
+      weedTypeId => Colors.orange,
+      _ => Colors.grey,
+    };
+  }
 }
