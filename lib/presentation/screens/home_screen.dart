@@ -39,7 +39,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.read<HomeViewModel>();
-    if (viewModel.shouldShowOffSeasonDialog) {
+    if (viewModel.checkOffSeason()) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!viewModel.hasShownOffSeasonMessage) {
           _showOffSeasonDialog(context);

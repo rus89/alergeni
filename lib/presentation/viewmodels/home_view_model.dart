@@ -53,13 +53,6 @@ class HomeViewModel extends ChangeNotifier {
   int get highCount => _highCount;
 
   //--------------------------------------------------------------------------
-  bool get shouldShowOffSeasonDialog {
-    final now = DateTime.now();
-    final isOffSeason = (now.month >= 10 || now.month <= 1);
-    return isOffSeason && !_hasShownOffSeasonMessage;
-  }
-
-  //--------------------------------------------------------------------------
   List<Locations>? get locations => _locations;
 
   //--------------------------------------------------------------------------
@@ -159,17 +152,9 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   //--------------------------------------------------------------------------
-  void checkOffSeason() {
+  bool checkOffSeason() {
     final now = DateTime.now();
-    final isOffSeason = (now.month >= 10 || now.month <= 1);
-
-    if (isOffSeason && !_hasShownOffSeasonMessage) {
-      _hasShownOffSeasonMessage = true;
-      notifyListeners();
-    } else if (!isOffSeason && _hasShownOffSeasonMessage) {
-      _hasShownOffSeasonMessage = false;
-      notifyListeners();
-    }
+    return (now.month >= 10 || now.month <= 1);
   }
 
   //--------------------------------------------------------------------------
