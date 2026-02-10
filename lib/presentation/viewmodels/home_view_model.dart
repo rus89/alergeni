@@ -10,7 +10,6 @@ class HomeViewModel extends ChangeNotifier {
   final PollenRepository _pollenRepository;
 
   List<Locations>? _locations;
-  bool _isLoading = true;
   String? _errorMessage;
   Locations? _selectedLocation;
   List<Allergen>? _allergens;
@@ -25,6 +24,13 @@ class HomeViewModel extends ChangeNotifier {
   int _mediumCount = 0;
   int _highCount = 0;
 
+  bool _isLoadingLocations = false;
+  bool _isLoadingAllergens = false;
+  bool _isLoadingAllergenTypes = false;
+
+  bool get isLoading =>
+      _isLoadingLocations || _isLoadingAllergens || _isLoadingAllergenTypes;
+
   //--------------------------------------------------------------------------
   bool get isShowingHistoricalData {
     if (_pollenDate == null) return false;
@@ -32,9 +38,6 @@ class HomeViewModel extends ChangeNotifier {
     final difference = now.difference(_pollenDate!).inDays;
     return difference > 7;
   }
-
-  //--------------------------------------------------------------------------
-  bool get isLoading => _isLoading;
 
   //--------------------------------------------------------------------------
   String? get errorMessage => _errorMessage;
@@ -62,12 +65,6 @@ class HomeViewModel extends ChangeNotifier {
   Locations? get selectedLocation => _selectedLocation;
 
   //--------------------------------------------------------------------------
-  set selectedLocation(Locations? location) {
-    _selectedLocation = location;
-    notifyListeners();
-  }
-
-  //--------------------------------------------------------------------------
   List<Allergen>? get allergens => _allergens;
 
   //--------------------------------------------------------------------------
@@ -83,7 +80,7 @@ class HomeViewModel extends ChangeNotifier {
   bool get hasShownOffSeasonMessage => _hasShownOffSeasonMessage;
 
   //--------------------------------------------------------------------------
-  set markOffSeasonDialogShown(bool value) {
+  set hasShownOffSeasonMessage(bool value) {
     _hasShownOffSeasonMessage = value;
     notifyListeners();
   }
@@ -106,18 +103,18 @@ class HomeViewModel extends ChangeNotifier {
   //--------------------------------------------------------------------------
   Future<void> fetchLocations() async {
     try {
-      _isLoading = true;
+      _isLoadingLocations = true;
       _errorMessage = null;
       notifyListeners();
 
       final locations = await _pollenRepository.fetchLocations();
 
       _locations = locations;
-      _isLoading = false;
+      _isLoadingLocations = false;
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
-      _isLoading = false;
+      _isLoadingLocations = false;
       notifyListeners();
     }
   }
@@ -125,18 +122,18 @@ class HomeViewModel extends ChangeNotifier {
   //--------------------------------------------------------------------------
   Future<void> fetchAllergens() async {
     try {
-      _isLoading = true;
+      _isLoadingAllergens = true;
       _errorMessage = null;
       notifyListeners();
 
       final allergens = await _pollenRepository.fetchAllergens();
 
       _allergens = allergens;
-      _isLoading = false;
+      _isLoadingAllergens = false;
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
-      _isLoading = false;
+      _isLoadingAllergens = false;
       notifyListeners();
     }
   }
@@ -144,18 +141,18 @@ class HomeViewModel extends ChangeNotifier {
   //--------------------------------------------------------------------------
   Future<void> fetchAllergenTypes() async {
     try {
-      _isLoading = true;
+      _isLoadingAllergenTypes = true;
       _errorMessage = null;
       notifyListeners();
 
       final allergenTypes = await _pollenRepository.fetchAllergenTypes();
 
       _allergenTypes = allergenTypes;
-      _isLoading = false;
+      _isLoadingAllergenTypes = false;
       notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
-      _isLoading = false;
+      _isLoadingAllergenTypes = false;
       notifyListeners();
     }
   }
@@ -164,6 +161,14 @@ class HomeViewModel extends ChangeNotifier {
   void checkOffSeason() {
     final now = DateTime.now();
     final isOffSeason = (now.month >= 10 || now.month <= 1);
+
+    if (isOffSeason && !_hasShownOffSeasonMessage) {
+      _hasShownOffSeasonMessage = true;
+      notifyListeners();
+    } else if (!isOffSeason && _hasShownOffSeasonMessage) {
+      _hasShownOffSeasonMessage = false;
+      notifyListeners();
+    }
   }
 
   //--------------------------------------------------------------------------
@@ -257,7 +262,7 @@ class HomeViewModel extends ChangeNotifier {
 
       // Step 5: Update state with all data
       _concentrations = concentrations;
-      _pollenDate = pollen!.date;
+      _pollenDate = pollen.date;
       selectedDate =
           '${pollen.date.day.toString().padLeft(2, '0')}.${pollen.date.month.toString().padLeft(2, '0')}.${pollen.date.year}.';
       _isLoadingPollenData = false;

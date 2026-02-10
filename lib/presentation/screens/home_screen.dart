@@ -26,7 +26,7 @@ class HomeScreen extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              context.read<HomeViewModel>().markOffSeasonDialogShown = true;
+              context.read<HomeViewModel>().hasShownOffSeasonMessage = true;
             },
             child: const Text('OK'),
           ),
@@ -38,13 +38,15 @@ class HomeScreen extends StatelessWidget {
   //--------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final viewModel = context.read<HomeViewModel>();
-      if (viewModel.shouldShowOffSeasonDialog) {
-        viewModel.markOffSeasonDialogShown = true;
-        _showOffSeasonDialog(context);
-      }
-    });
+    final viewModel = context.read<HomeViewModel>();
+    if (viewModel.shouldShowOffSeasonDialog) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!viewModel.hasShownOffSeasonMessage) {
+          _showOffSeasonDialog(context);
+          viewModel.hasShownOffSeasonMessage = true;
+        }
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
