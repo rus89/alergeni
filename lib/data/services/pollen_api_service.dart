@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:alergeni/core/config/api_config.dart';
 import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/data/models/allergen_types.dart';
 import 'package:alergeni/data/models/concentrations.dart';
@@ -9,9 +10,6 @@ import 'package:alergeni/data/models/pollens.dart';
 import 'package:http/http.dart' as http;
 
 class PollenApiService {
-  static const String _defaultBaseUrl = 'http://77.46.150.200/api/opendata';
-  static const _requestTimeout = Duration(seconds: 10);
-
   final http.Client _httpClient;
   final String _baseUrl;
   final bool _ownsClient;
@@ -20,7 +18,7 @@ class PollenApiService {
   PollenApiService({http.Client? httpClient, String? baseUrl})
     : _httpClient = httpClient ?? http.Client(),
       _ownsClient = httpClient == null,
-      _baseUrl = (baseUrl ?? _defaultBaseUrl).replaceAll(RegExp(r'/+$'), '');
+      _baseUrl = (baseUrl ?? ApiConfig.baseUrl).replaceAll(RegExp(r'/+$'), '');
 
   //--------------------------------------------------------------------------
   void dispose() {
@@ -58,7 +56,7 @@ class PollenApiService {
   Future<List<AllergenTypes>> fetchAllergenTypes() async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/allergen-types/'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<List<AllergenTypes>>(
       response,
@@ -72,7 +70,7 @@ class PollenApiService {
   Future<AllergenTypes> fetchAllergenTypeById(int id) async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/allergen-types/$id/'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<AllergenTypes>(
       response,
@@ -84,7 +82,7 @@ class PollenApiService {
   Future<List<Allergen>> fetchAllergens() async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/allergens/'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<List<Allergen>>(
       response,
@@ -98,7 +96,7 @@ class PollenApiService {
   Future<Allergen> fetchAllergenById(int id) async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/allergens/$id/'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<Allergen>(
       response,
@@ -110,7 +108,7 @@ class PollenApiService {
   Future<List<Locations>> fetchLocations() async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/locations/'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<List<Locations>>(
       response,
@@ -124,7 +122,7 @@ class PollenApiService {
   Future<Locations> fetchLocationById(int id) async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/locations/$id/'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<Locations>(
       response,
@@ -136,7 +134,7 @@ class PollenApiService {
   Future<PaginatedResponse<Pollens>> fetchPollens({int page = 1}) async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/pollens/?page=$page'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<PaginatedResponse<Pollens>>(
       response,
@@ -151,7 +149,7 @@ class PollenApiService {
   Future<Pollens> fetchPollenById(int id) async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/pollens/$id/'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<Pollens>(
       response,
@@ -165,7 +163,7 @@ class PollenApiService {
   ) async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/pollens/?location=$locationId'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<PaginatedResponse<Pollens>>(
       response,
@@ -188,7 +186,7 @@ class PollenApiService {
             '${dateAfter != null ? '&date_after=$dateAfter' : ''}',
           ),
         )
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<PaginatedResponse<Pollens>>(
       response,
@@ -206,7 +204,7 @@ class PollenApiService {
   }) async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/pollens/?date=$date&page=$page'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<PaginatedResponse<Pollens>>(
       response,
@@ -229,7 +227,7 @@ class PollenApiService {
             '$_baseUrl/pollens/?location=$locationId&date=$date&page=$page',
           ),
         )
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<PaginatedResponse<Pollens>>(
       response,
@@ -246,7 +244,7 @@ class PollenApiService {
   }) async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/concentrations/?page=$page'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<PaginatedResponse<Concentrations>>(
       response,
@@ -261,7 +259,7 @@ class PollenApiService {
   Future<Concentrations> fetchConcentrationById(int id) async {
     final response = await _httpClient
         .get(Uri.parse('$_baseUrl/concentrations/$id/'))
-        .timeout(_requestTimeout);
+        .timeout(ApiConfig.requestTimeout);
 
     return _handleResponse<Concentrations>(
       response,
