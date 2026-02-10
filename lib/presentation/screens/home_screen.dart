@@ -1,5 +1,5 @@
+import 'package:alergeni/core/helpers/allergen_type_helper.dart';
 import 'package:alergeni/core/theme/app_theme.dart';
-import 'package:alergeni/data/models/allergen_types.dart';
 import 'package:alergeni/data/models/concentrations.dart';
 import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/presentation/viewmodels/home_view_model.dart';
@@ -229,16 +229,7 @@ class HomeScreen extends StatelessWidget {
 
   //--------------------------------------------------------------------------
   Widget _getTypeIcon(int typeId) {
-    switch (typeId) {
-      case 1:
-        return const Icon(Icons.nature, color: Colors.green);
-      case 2:
-        return const Icon(Icons.grass, color: Colors.lightGreen);
-      case 3:
-        return const Icon(Icons.local_florist, color: Colors.orange);
-      default:
-        return const Icon(Icons.all_inclusive, color: Colors.grey);
-    }
+    return AllergenTypeHelper.getIconForType(typeId);
   }
 
   //--------------------------------------------------------------------------
@@ -301,18 +292,13 @@ class HomeScreen extends StatelessWidget {
               final concentrationsForType = entry.value;
 
               // Find the type name
-              final typeName =
-                  viewModel.allergenTypes
-                      ?.firstWhere(
-                        (t) => t.id == typeId,
-                        orElse: () => AllergenTypes(id: typeId, name: 'Ostalo'),
-                      )
-                      .name ??
-                  'Ostalo';
+              final typeName = AllergenTypeHelper.getLocalizedNameForType(
+                typeId,
+              );
 
               return ExpansionTile(
                 // add Icon before type name based on typeId (e.g. tree, grass, weed)
-                leading: _getTypeIcon(typeId),
+                leading: AllergenTypeHelper.getIconForType(typeId),
                 title: Text(
                   '$typeName (${concentrationsForType.length})',
                   style: const TextStyle(fontWeight: FontWeight.w600),

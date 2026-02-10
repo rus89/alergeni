@@ -8,6 +8,8 @@ import 'package:alergeni/data/services/pollen_api_service.dart';
 
 class PollenRepository {
   final PollenApiService _apiService;
+  final Map<int, Concentrations> _concentrationCache = {};
+  final Map<int, Allergen> _allergenCache = {};
 
   PollenRepository({PollenApiService? apiService})
     : _apiService = apiService ?? PollenApiService();
@@ -26,7 +28,15 @@ class PollenRepository {
 
   //--------------------------------------------------------------------------
   Future<List<Allergen>> fetchAllergens() async {
+    final notCached = _allergenCache.isEmpty;
+    if (!notCached) {
+      return _allergenCache.values.toList();
+    }
+
     final response = await _apiService.fetchAllergens();
+    for (var allergen in response) {
+      _allergenCache[allergen.id] = allergen;
+    }
     return response;
   }
 
@@ -119,11 +129,22 @@ class PollenRepository {
 
   //--------------------------------------------------------------------------
   Future<List<Concentrations>> fetchConcentrationsByIds(List<int> ids) async {
-    try {
-      final futures = ids.map((id) => fetchConcentrationById(id));
-      return Future.wait(futures);
-    } catch (e) {
-      throw Exception('Failed to load concentrations by IDs');
+    final notCached = ids
+        .where((id) => !_concentrationCache.containsKey(id))
+        .toList();
+
+    if (notCached.isEmpty) {
+      return ids.map((id) => _concentrationCache[id]!).toList();
     }
+
+    // Fetch only missing IDs, then merge with cache
+    final futures = notCached.map((id) => fetchConcentrationById(id));
+    final newConcs = await Future.wait(futures);
+
+    for (var c in newConcs) {
+      _concentrationCache[c.id] = c;
+    }
+
+    return ids.map((id) => _concentrationCache[id]!).toList();
   }
 }
