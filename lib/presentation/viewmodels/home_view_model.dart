@@ -91,7 +91,7 @@ class HomeViewModel extends ChangeNotifier {
       fetchAllergenTypes(),
     ]);
 
-    checkOffSeason();
+    _updateOffSeasonState();
   }
 
   //--------------------------------------------------------------------------
@@ -152,9 +152,32 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   //--------------------------------------------------------------------------
-  bool checkOffSeason() {
+  bool get shouldShowOffSeasonDialog {
+    return _isOffSeason() && !_hasShownOffSeasonMessage;
+  }
+
+  //--------------------------------------------------------------------------
+  bool _isOffSeason() {
     final now = DateTime.now();
     return (now.month >= 10 || now.month <= 1);
+  }
+
+  //--------------------------------------------------------------------------
+  void _updateOffSeasonState() {
+    final isOffSeason = _isOffSeason();
+
+    if (isOffSeason && !_hasShownOffSeasonMessage) {
+      _hasShownOffSeasonMessage = true;
+      notifyListeners();
+    } else if (!isOffSeason && _hasShownOffSeasonMessage) {
+      _hasShownOffSeasonMessage = false;
+      notifyListeners();
+    }
+  }
+
+  //--------------------------------------------------------------------------
+  bool checkOffSeason() {
+    return _isOffSeason();
   }
 
   //--------------------------------------------------------------------------
@@ -200,6 +223,7 @@ class HomeViewModel extends ChangeNotifier {
       if (pollensResponse.results.isEmpty) {
         _concentrations = null;
         selectedDate = null;
+        _pollenDate = null;
         _isLoadingPollenData = false;
         notifyListeners();
         return;
@@ -223,9 +247,12 @@ class HomeViewModel extends ChangeNotifier {
         }
       }
 
-      if (pollen == null || concentrations.isEmpty) {
+      if (pollen == null ||
+          concentrations.isEmpty ||
+          !concentrations.any((c) => c.value > 0)) {
         _concentrations = null;
         selectedDate = null;
+        _pollenDate = null;
         _isLoadingPollenData = false;
         notifyListeners();
         return;
@@ -271,11 +298,6 @@ class HomeViewModel extends ChangeNotifier {
   //--------------------------------------------------------------------------
   void refreshPollenData() {
     fetchPollenData();
-  }
-
-  //--------------------------------------------------------------------------
-  void ensureOffSeasonNotice() {
-    checkOffSeason();
   }
 
   //--------------------------------------------------------------------------
