@@ -88,7 +88,7 @@ class AboutScreen extends StatelessWidget {
 
                 // developer info
                 Text(
-                  'Aplikaciju je razvio samostalni programer Milan Rusimov kao lični projekat sa ciljem pružanja korisnih informacija osobama koje pate od alergija na polen.',
+                  'Aplikaciju je razvio samostalni programer kao lični projekat sa ciljem pružanja korisnih informacija osobama koje pate od alergija na polen.',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
