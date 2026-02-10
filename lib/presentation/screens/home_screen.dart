@@ -228,11 +228,6 @@ class HomeScreen extends StatelessWidget {
   }
 
   //--------------------------------------------------------------------------
-  Widget _getTypeIcon(int typeId) {
-    return AllergenTypeHelper.getIconForType(typeId);
-  }
-
-  //--------------------------------------------------------------------------
   Widget _buildAllergenList(HomeViewModel viewModel, BuildContext context) {
     if (viewModel.isLoadingPollenData) {
       return const Center(child: CircularProgressIndicator());
