@@ -3,6 +3,9 @@ import 'package:alergeni/core/theme/app_theme.dart';
 import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/presentation/viewmodels/home_view_model.dart';
+import 'package:alergeni/presentation/widgets/empty_state.dart';
+import 'package:alergeni/presentation/widgets/error_state.dart';
+import 'package:alergeni/presentation/widgets/loading_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -55,32 +58,18 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildBody(BuildContext context, HomeViewModel viewModel) {
     if (viewModel.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const LoadingState();
     }
 
     if (viewModel.errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              'Greška: ${viewModel.errorMessage}',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: viewModel.fetchLocations,
-              child: const Text('Pokušaj ponovo'),
-            ),
-          ],
-        ),
+      return ErrorState(
+        message: viewModel.errorMessage!,
+        onRetry: viewModel.fetchLocations,
       );
     }
 
     if (viewModel.locations == null || viewModel.locations!.isEmpty) {
-      return const Center(child: Text('Nema dostupnih lokacija.'));
+      return const EmptyState(title: 'Nema dostupnih lokacija.');
     }
 
     return SingleChildScrollView(
@@ -412,10 +401,7 @@ class HomeScreen extends StatelessWidget {
   Widget _buildTopAllergensList(BuildContext context, HomeViewModel viewModel) {
     if (viewModel.isLoadingPollenData) {
       return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Center(child: CircularProgressIndicator()),
-        ),
+        child: Padding(padding: EdgeInsets.all(16), child: LoadingState()),
       );
     }
 

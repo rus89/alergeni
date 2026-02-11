@@ -1,6 +1,9 @@
 import 'package:alergeni/core/helpers/allergen_type_helper.dart';
 import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/presentation/viewmodels/map_view_model.dart';
+import 'package:alergeni/presentation/widgets/empty_state.dart';
+import 'package:alergeni/presentation/widgets/error_state.dart';
+import 'package:alergeni/presentation/widgets/loading_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -20,34 +23,15 @@ class MapScreen extends StatelessWidget {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: mapViewModel.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const LoadingState()
           : mapViewModel.errorMessage != null
-          ? _buildErrorView(context, mapViewModel)
+          ? ErrorState(
+              message: mapViewModel.errorMessage!,
+              onRetry: mapViewModel.refreshLocations,
+            )
           : mapViewModel.locations == null || mapViewModel.locations!.isEmpty
-          ? const Center(child: Text('Nema dostupnih lokacija.'))
+          ? const EmptyState(title: 'Nema dostupnih lokacija.')
           : _MapView(locations: mapViewModel.locations!),
-    );
-  }
-
-  //--------------------------------------------------------------------------
-  Widget _buildErrorView(BuildContext context, MapViewModel viewModel) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 48),
-          const SizedBox(height: 16),
-          Text(
-            'Greška: ${viewModel.errorMessage}',
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: viewModel.refreshLocations,
-            child: const Text('Pokušaj ponovo'),
-          ),
-        ],
-      ),
     );
   }
 }
