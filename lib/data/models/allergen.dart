@@ -44,4 +44,13 @@ class Allergen {
       'allergenicity_display': allergenicityDisplay,
     };
   }
+
+  String get allergenicityDisplayLocalized {
+    return switch (allergenicityDisplay) {
+      'mild' => 'Slab',
+      'moderate' => 'Srednji',
+      'severe' => 'Jak',
+      _ => allergenicityDisplay,
+    };
+  }
 }
