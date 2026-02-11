@@ -15,15 +15,30 @@ class AboutScreen extends StatefulWidget {
 
 //--------------------------------------------------------------------------
 class _AboutScreenState extends State<AboutScreen> {
+  Future<List<Allergen>>? _allergensFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _allergensFuture = context.read<HomeViewModel>().fetchAllergens();
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final allergens = context.read<HomeViewModel>().fetchAllergens();
+    final allergens = _allergensFuture;
     return Scaffold(
       appBar: AppBar(
         title: const Text('O aplikaciji'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: _buildBody(context, allergens),
+      body: allergens == null
+          ? const Center(child: CircularProgressIndicator())
+          : _buildBody(context, allergens),
     );
   }
 
