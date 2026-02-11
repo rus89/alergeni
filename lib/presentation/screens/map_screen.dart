@@ -1,3 +1,4 @@
+import 'package:alergeni/core/helpers/allergen_type_helper.dart';
 import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/presentation/viewmodels/map_view_model.dart';
 import 'package:flutter/material.dart';
@@ -66,6 +67,12 @@ class _MapViewState extends State<_MapView> {
   final MapController _mapController = MapController();
 
   @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
@@ -105,7 +112,68 @@ class _MapViewState extends State<_MapView> {
             ),
           ],
         ),
+        // Legend
+        Positioned(bottom: 20, left: 20, child: _buildLegend()),
         _buildFloatingControls(),
+      ],
+    );
+  }
+
+  //--------------------------------------------------------------------------
+  Widget _buildLegend() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Legenda',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          _buildLegendItem(
+            AllergenTypeHelper.getColorForType(AllergenTypeHelper.treeTypeId),
+            'Drveće',
+          ),
+          const SizedBox(height: 4),
+          _buildLegendItem(
+            AllergenTypeHelper.getColorForType(AllergenTypeHelper.grassTypeId),
+            'Trave',
+          ),
+          const SizedBox(height: 4),
+          _buildLegendItem(
+            AllergenTypeHelper.getColorForType(AllergenTypeHelper.weedTypeId),
+            'Korov',
+          ),
+        ],
+      ),
+    );
+  }
+
+  //----------------------------------------------------------------------------
+  Widget _buildLegendItem(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Text(label, style: const TextStyle(fontSize: 12)),
       ],
     );
   }
