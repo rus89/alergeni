@@ -232,6 +232,14 @@ class HomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
+                      'Nedeljni pregled',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
                       viewModel.selectedLocation!.name,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Colors.white,
@@ -239,14 +247,46 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      viewModel.siteData != null &&
-                              viewModel.siteData!.isNotEmpty
-                          ? 'Nedelja ${viewModel.siteData!.first.week}'
-                          : viewModel.selectedDate ?? 'N/A',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
+                    Row(
+                      children: [
+                        Text(
+                          viewModel.siteData != null &&
+                                  viewModel.siteData!.isNotEmpty
+                              ? 'Nedelja ${viewModel.siteData!.first.week}'
+                              : viewModel.selectedDate ?? 'N/A',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.white70),
+                        ),
+                        if (viewModel.isShowingHistoricalData) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white24,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.history,
+                                  size: 12,
+                                  color: Colors.white70,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Istorijski podaci',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: Colors.white70),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
@@ -256,7 +296,7 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Kategorija: $overallStatus',
+            'Ukupna kategorija rizika: $overallStatus',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w500,
@@ -279,6 +319,13 @@ class HomeScreen extends StatelessWidget {
               context,
             ).textTheme.bodySmall?.copyWith(color: Colors.white70),
           ),
+          Text(
+            'Udeo dana sa povišenim koncentracijama u ovoj nedelji.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.white54,
+              fontSize: 11,
+            ),
+          ),
         ],
       ),
     );
@@ -297,7 +344,7 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Pregled po vrstama',
+              'Današnji pregled po vrstama',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
@@ -309,10 +356,7 @@ class HomeScreen extends StatelessWidget {
                   child: _buildSnapshotColumn(
                     icon: Icons.park,
                     label: 'Drveće',
-                    severity: typeData[1]?['severity'] ?? 'Nema',
                     color: typeData[1]?['color'] ?? Colors.grey,
-                    allergenicityLabel:
-                        typeData[1]?['allergenicityLabel'] ?? '',
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -320,10 +364,7 @@ class HomeScreen extends StatelessWidget {
                   child: _buildSnapshotColumn(
                     icon: Icons.grass,
                     label: 'Trave',
-                    severity: typeData[2]?['severity'] ?? 'Nema',
                     color: typeData[2]?['color'] ?? Colors.grey,
-                    allergenicityLabel:
-                        typeData[2]?['allergenicityLabel'] ?? '',
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -331,10 +372,7 @@ class HomeScreen extends StatelessWidget {
                   child: _buildSnapshotColumn(
                     icon: Icons.eco,
                     label: 'Korovi',
-                    severity: typeData[3]?['severity'] ?? 'Nema',
                     color: typeData[3]?['color'] ?? Colors.grey,
-                    allergenicityLabel:
-                        typeData[3]?['allergenicityLabel'] ?? '',
                   ),
                 ),
               ],
@@ -348,9 +386,7 @@ class HomeScreen extends StatelessWidget {
   Widget _buildSnapshotColumn({
     required IconData icon,
     required String label,
-    required String severity,
     required Color color,
-    required String allergenicityLabel,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -367,28 +403,6 @@ class HomeScreen extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 4),
-          Text(
-            severity,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          if (allergenicityLabel.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              allergenicityLabel,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 9,
-                color: Colors.grey[500],
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -474,6 +488,17 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
             ),
+            if (viewModel.siteData != null &&
+                viewModel.siteData!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Trend (↑ rastući, → stabilan, ↓ opadajući) u odnosu na prethodni period.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             ...topAllergens.asMap().entries.map((entry) {
               final index = entry.key + 1;
