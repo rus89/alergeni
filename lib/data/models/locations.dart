@@ -1,8 +1,8 @@
 class Locations {
   final int id;
   final String name;
-  final String latitude;
-  final String longitude;
+  final double latitude;
+  final double longitude;
   final String description;
 
   Locations({
@@ -17,8 +17,8 @@ class Locations {
     return Locations(
       id: json['id'],
       name: json['name'],
-      latitude: json['latitude'],
-      longitude: json['longitude'],
+      latitude: double.tryParse(json['latitude'].toString()) ?? 0.0,
+      longitude: double.tryParse(json['longitude'].toString()) ?? 0.0,
       description: json['description'],
     );
   }
@@ -27,8 +27,8 @@ class Locations {
     return {
       'id': id,
       'name': name,
-      'latitude': latitude,
-      'longitude': longitude,
+      'latitude': latitude.toString(),
+      'longitude': longitude.toString(),
       'description': description,
     };
   }

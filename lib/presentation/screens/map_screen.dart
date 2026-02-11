@@ -93,10 +93,7 @@ class _MapViewState extends State<_MapView> {
             MarkerLayer(
               markers: widget.locations.map((location) {
                 return Marker(
-                  point: LatLng(
-                    double.tryParse(location.latitude) ?? 0.0,
-                    double.tryParse(location.longitude) ?? 0.0,
-                  ),
+                  point: LatLng(location.latitude, location.longitude),
                   width: 40,
                   height: 40,
                   child: GestureDetector(
