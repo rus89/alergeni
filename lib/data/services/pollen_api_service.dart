@@ -7,6 +7,7 @@ import 'package:alergeni/data/models/concentrations.dart';
 import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/data/models/paginated_response.dart';
 import 'package:alergeni/data/models/pollens.dart';
+import 'package:alergeni/data/models/site.dart';
 import 'package:http/http.dart' as http;
 
 class PollenApiService {
@@ -275,5 +276,19 @@ class PollenApiService {
     } catch (e) {
       throw Exception('Failed to load concentrations for ids: $ids. Error: $e');
     }
+  }
+
+  //--------------------------------------------------------------------------
+  Future<List<Site>> fetchSites({required int locationId}) async {
+    final response = await _httpClient
+        .get(Uri.parse('$_baseUrl/sites/$locationId/'))
+        .timeout(ApiConfig.requestTimeout);
+
+    return _handleResponse<List<Site>>(
+      response,
+      (json) => (json as List<dynamic>)
+          .map((item) => Site.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
   }
 }

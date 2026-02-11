@@ -4,6 +4,7 @@ import 'package:alergeni/data/models/concentrations.dart';
 import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/data/models/paginated_response.dart';
 import 'package:alergeni/data/models/pollens.dart';
+import 'package:alergeni/data/models/site.dart';
 import 'package:alergeni/data/services/pollen_api_service.dart';
 
 class PollenRepository {
@@ -146,5 +147,11 @@ class PollenRepository {
     }
 
     return ids.map((id) => _concentrationCache[id]!).toList();
+  }
+
+  //--------------------------------------------------------------------------
+  Future<List<Site>> fetchSites({required int locationId}) async {
+    final response = await _apiService.fetchSites(locationId: locationId);
+    return response;
   }
 }

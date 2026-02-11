@@ -4,6 +4,7 @@ import 'package:alergeni/data/models/allergen_types.dart';
 import 'package:alergeni/data/models/concentrations.dart';
 import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/data/models/pollens.dart';
+import 'package:alergeni/data/models/site.dart';
 import 'package:alergeni/data/repositories/pollen_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -16,6 +17,7 @@ class HomeViewModel extends ChangeNotifier {
   List<Allergen>? _allergens;
   List<AllergenTypes>? _allergenTypes;
   List<Concentrations>? _concentrations;
+  List<Site>? _siteData;
   bool _isLoadingPollenData = false;
   String? selectedDate;
   bool _hasShownOffSeasonMessage = false;
@@ -42,35 +44,16 @@ class HomeViewModel extends ChangeNotifier {
 
   //--------------------------------------------------------------------------
   String? get errorMessage => _errorMessage;
-
-  //--------------------------------------------------------------------------
   int get lowCount => _lowCount;
-
-  //--------------------------------------------------------------------------
   int get mediumCount => _mediumCount;
-
-  //--------------------------------------------------------------------------
   int get highCount => _highCount;
-
-  //--------------------------------------------------------------------------
   List<Locations>? get locations => _locations;
-
-  //--------------------------------------------------------------------------
   Locations? get selectedLocation => _selectedLocation;
-
-  //--------------------------------------------------------------------------
   List<Allergen>? get allergens => _allergens;
-
-  //--------------------------------------------------------------------------
   List<AllergenTypes>? get allergenTypes => _allergenTypes;
-
-  //--------------------------------------------------------------------------
+  List<Site>? get siteData => _siteData;
   List<Concentrations>? get concentrations => _concentrations;
-
-  //--------------------------------------------------------------------------
   bool get isLoadingPollenData => _isLoadingPollenData;
-
-  //--------------------------------------------------------------------------
   bool get hasShownOffSeasonMessage => _hasShownOffSeasonMessage;
 
   //--------------------------------------------------------------------------
@@ -114,7 +97,7 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   //--------------------------------------------------------------------------
-  Future<void> fetchAllergens() async {
+  Future<List<Allergen>> fetchAllergens() async {
     try {
       _isLoadingAllergens = true;
       _errorMessage = null;
@@ -125,10 +108,13 @@ class HomeViewModel extends ChangeNotifier {
       _allergens = allergens;
       _isLoadingAllergens = false;
       notifyListeners();
+      return allergens;
     } catch (e) {
+      _allergens = null;
       _errorMessage = e.toString();
       _isLoadingAllergens = false;
       notifyListeners();
+      return [];
     }
   }
 
@@ -181,6 +167,22 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   //--------------------------------------------------------------------------
+  Future<void> fetchSiteData() async {
+    if (_selectedLocation == null) return;
+
+    try {
+      final siteData = await _pollenRepository.fetchSites(
+        locationId: _selectedLocation!.id,
+      );
+      _siteData = siteData;
+      notifyListeners();
+    } catch (e) {
+      _siteData = null;
+      notifyListeners();
+    }
+  }
+
+  //--------------------------------------------------------------------------
   Future<void> fetchPollenData() async {
     if (_selectedLocation == null) return;
 
@@ -189,97 +191,8 @@ class HomeViewModel extends ChangeNotifier {
       _errorMessage = null;
       notifyListeners();
 
-      // Step 1: Try to get today's pollen data for the selected location
-      final today = DateTime.now();
-      final todayStr =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-      var pollensResponse = await _pollenRepository
-          .fetchPollensByLocationAndDate(_selectedLocation!.id, todayStr);
+      await Future.wait([fetchPollenConcentrationData(), fetchSiteData()]);
 
-      Pollens? pollen;
-
-      if (pollensResponse.results.isNotEmpty) {
-        pollen = pollensResponse.results.first;
-      } else {
-        // If no data for today, try to get the most recent data for this location
-        final lastYear = today.year - 1;
-        final dateAfter = '$lastYear-01-01';
-        pollensResponse = await _pollenRepository.fetchRecentPollensByLocation(
-          _selectedLocation!.id,
-          dateAfter: dateAfter,
-        );
-      }
-
-      if (pollensResponse.results.isEmpty) {
-        // No data - off season or no data for location
-        final twoYearsAgo = today.year - 2;
-        final dateAfter = '$twoYearsAgo-01-01';
-        pollensResponse = await _pollenRepository.fetchRecentPollensByLocation(
-          _selectedLocation!.id,
-          dateAfter: dateAfter,
-        );
-      }
-
-      if (pollensResponse.results.isEmpty) {
-        _concentrations = null;
-        selectedDate = null;
-        _pollenDate = null;
-        _isLoadingPollenData = false;
-        notifyListeners();
-        return;
-      }
-
-      List<Concentrations> concentrations = [];
-
-      // sort by date descending to get the most recent record
-      final sortedPollens = pollensResponse.results.toList()
-        ..sort((a, b) => b.date.compareTo(a.date));
-      for (var p in sortedPollens) {
-        if (p.concentrationIds.isNotEmpty) {
-          pollen = p;
-          concentrations = await _pollenRepository.fetchConcentrationsByIds(
-            pollen.concentrationIds,
-          );
-
-          if (concentrations.any((c) => c.value > 0)) {
-            break;
-          }
-        }
-      }
-
-      if (pollen == null ||
-          concentrations.isEmpty ||
-          !concentrations.any((c) => c.value > 0)) {
-        _concentrations = null;
-        selectedDate = null;
-        _pollenDate = null;
-        _isLoadingPollenData = false;
-        notifyListeners();
-        return;
-      }
-
-      // Step 3: Count severity levels
-      _lowCount = 0;
-      _mediumCount = 0;
-      _highCount = 0;
-
-      for (var conc in concentrations) {
-        if (conc.value >= SeverityThresholds.lowMin &&
-            conc.value <= SeverityThresholds.lowMax) {
-          _lowCount++;
-        } else if (conc.value >= SeverityThresholds.mediumMin &&
-            conc.value <= SeverityThresholds.mediumMax) {
-          _mediumCount++;
-        } else if (conc.value >= SeverityThresholds.highMin) {
-          _highCount++;
-        }
-      }
-
-      // Step 5: Update state with all data
-      _concentrations = concentrations;
-      _pollenDate = pollen.date;
-      selectedDate =
-          '${pollen.date.day.toString().padLeft(2, '0')}.${pollen.date.month.toString().padLeft(2, '0')}.${pollen.date.year}.';
       _isLoadingPollenData = false;
       notifyListeners();
     } catch (e) {
@@ -287,6 +200,99 @@ class HomeViewModel extends ChangeNotifier {
       _isLoadingPollenData = false;
       notifyListeners();
     }
+  }
+
+  //--------------------------------------------------------------------------
+  Future<void> fetchPollenConcentrationData() async {
+    // Step 1: Try to get today's pollen data for the selected location
+    final today = DateTime.now();
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    var pollensResponse = await _pollenRepository.fetchPollensByLocationAndDate(
+      _selectedLocation!.id,
+      todayStr,
+    );
+
+    Pollens? pollen;
+
+    if (pollensResponse.results.isNotEmpty) {
+      pollen = pollensResponse.results.first;
+    } else {
+      // If no data for today, try to get the most recent data for this location
+      final lastYear = today.year - 1;
+      final dateAfter = '$lastYear-01-01';
+      pollensResponse = await _pollenRepository.fetchRecentPollensByLocation(
+        _selectedLocation!.id,
+        dateAfter: dateAfter,
+      );
+    }
+
+    if (pollensResponse.results.isEmpty) {
+      // No data - off season or no data for location
+      final twoYearsAgo = today.year - 2;
+      final dateAfter = '$twoYearsAgo-01-01';
+      pollensResponse = await _pollenRepository.fetchRecentPollensByLocation(
+        _selectedLocation!.id,
+        dateAfter: dateAfter,
+      );
+    }
+
+    if (pollensResponse.results.isEmpty) {
+      _concentrations = null;
+      selectedDate = null;
+      _pollenDate = null;
+      return;
+    }
+
+    List<Concentrations> concentrations = [];
+
+    // sort by date descending to get the most recent record
+    final sortedPollens = pollensResponse.results.toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    for (var p in sortedPollens) {
+      if (p.concentrationIds.isNotEmpty) {
+        pollen = p;
+        concentrations = await _pollenRepository.fetchConcentrationsByIds(
+          pollen.concentrationIds,
+        );
+
+        if (concentrations.any((c) => c.value > 0)) {
+          break;
+        }
+      }
+    }
+
+    if (pollen == null ||
+        concentrations.isEmpty ||
+        !concentrations.any((c) => c.value > 0)) {
+      _concentrations = null;
+      selectedDate = null;
+      _pollenDate = null;
+      return;
+    }
+
+    // Step 3: Count severity levels
+    _lowCount = 0;
+    _mediumCount = 0;
+    _highCount = 0;
+
+    for (var conc in concentrations) {
+      if (conc.value >= SeverityThresholds.lowMin &&
+          conc.value <= SeverityThresholds.lowMax) {
+        _lowCount++;
+      } else if (conc.value >= SeverityThresholds.mediumMin &&
+          conc.value <= SeverityThresholds.mediumMax) {
+        _mediumCount++;
+      } else if (conc.value >= SeverityThresholds.highMin) {
+        _highCount++;
+      }
+    }
+
+    // Step 5: Update state with all data
+    _concentrations = concentrations;
+    _pollenDate = pollen.date;
+    selectedDate =
+        '${pollen.date.day.toString().padLeft(2, '0')}.${pollen.date.month.toString().padLeft(2, '0')}.${pollen.date.year}.';
   }
 
   //--------------------------------------------------------------------------
@@ -323,6 +329,59 @@ class HomeViewModel extends ChangeNotifier {
       return Colors.green;
     } else {
       return Colors.grey;
+    }
+  }
+
+  //--------------------------------------------------------------------------
+  String get fiveTierLevel {
+    if (_siteData == null || _siteData!.isEmpty) return getOverallStatus();
+
+    final maxLevel = _siteData!
+        .map((s) => s.level)
+        .reduce((a, b) => a > b ? a : b);
+
+    return _levelToLabel(maxLevel);
+  }
+
+  //--------------------------------------------------------------------------
+  String _levelToLabel(int level) {
+    switch (level) {
+      case 1:
+        return 'Vrlo niska';
+      case 2:
+        return 'Niska';
+      case 3:
+        return 'Srednja';
+      case 4:
+        return 'Visoka';
+      case 5:
+        return 'Vrlo visoka';
+      default:
+        return 'Nepoznato';
+    }
+  }
+
+  //--------------------------------------------------------------------------
+  Color getFiveTierColor() {
+    if (_siteData == null || _siteData!.isEmpty) return getOverallStatusColor();
+
+    final maxLevel = _siteData!
+        .map((s) => s.level)
+        .reduce((a, b) => a > b ? a : b);
+
+    switch (maxLevel) {
+      case 1:
+        return Colors.lightGreen;
+      case 2:
+        return Colors.green;
+      case 3:
+        return Colors.orange;
+      case 4:
+        return Colors.redAccent;
+      case 5:
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 }
