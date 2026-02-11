@@ -1,8 +1,9 @@
 import 'package:alergeni/core/helpers/allergen_type_helper.dart';
 import 'package:alergeni/core/theme/app_theme.dart';
 import 'package:alergeni/data/models/allergen.dart';
-import 'package:alergeni/data/repositories/pollen_repository.dart';
+import 'package:alergeni/presentation/viewmodels/home_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 //--------------------------------------------------------------------------
 class AboutScreen extends StatefulWidget {
@@ -14,28 +15,20 @@ class AboutScreen extends StatefulWidget {
 
 //--------------------------------------------------------------------------
 class _AboutScreenState extends State<AboutScreen> {
-  late Future<List<Allergen>> _allergensFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    final repo = PollenRepository();
-    _allergensFuture = repo.fetchAllergens();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final allergens = context.read<HomeViewModel>().fetchAllergens();
     return Scaffold(
       appBar: AppBar(
         title: const Text('O aplikaciji'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: _buildBody(context),
+      body: _buildBody(context, allergens),
     );
   }
 
   //--------------------------------------------------------------------------
-  Widget _buildBody(BuildContext context) {
+  Widget _buildBody(BuildContext context, Future<List<Allergen>> allergens) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -110,7 +103,7 @@ class _AboutScreenState extends State<AboutScreen> {
                   ),
                 ),
                 const SizedBox(height: 12.0),
-                _buildAllergensTable(context),
+                _buildAllergensTable(context, allergens),
 
                 const SizedBox(height: 24.0),
                 const Divider(height: 32.0),
@@ -132,9 +125,12 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   //--------------------------------------------------------------------------
-  Widget _buildAllergensTable(BuildContext context) {
+  Widget _buildAllergensTable(
+    BuildContext context,
+    Future<List<Allergen>> allergens,
+  ) {
     return FutureBuilder<List<Allergen>>(
-      future: _allergensFuture,
+      future: allergens,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
