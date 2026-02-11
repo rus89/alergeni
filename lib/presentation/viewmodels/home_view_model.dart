@@ -151,11 +151,7 @@ class HomeViewModel extends ChangeNotifier {
   //--------------------------------------------------------------------------
   void _updateOffSeasonState() {
     final isOffSeason = _isOffSeason();
-
-    if (isOffSeason && !_hasShownOffSeasonMessage) {
-      _hasShownOffSeasonMessage = true;
-      notifyListeners();
-    } else if (!isOffSeason && _hasShownOffSeasonMessage) {
+    if (!isOffSeason && _hasShownOffSeasonMessage) {
       _hasShownOffSeasonMessage = false;
       notifyListeners();
     }
