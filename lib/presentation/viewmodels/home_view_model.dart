@@ -8,6 +8,7 @@ import 'package:alergeni/data/models/pollens.dart';
 import 'package:alergeni/data/models/site.dart';
 import 'package:alergeni/data/repositories/pollen_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 class HomeViewModel extends ChangeNotifier {
   final PollenRepository _pollenRepository;
@@ -20,6 +21,7 @@ class HomeViewModel extends ChangeNotifier {
   List<Concentrations>? _concentrations;
   List<Site>? _siteData;
   bool _isLoadingPollenData = false;
+  bool _isLocatingNearestLocation = false;
   String? selectedDate;
   bool _hasShownOffSeasonMessage = false;
   DateTime? _pollenDate;
@@ -55,6 +57,7 @@ class HomeViewModel extends ChangeNotifier {
   List<Site>? get siteData => _siteData;
   List<Concentrations>? get concentrations => _concentrations;
   bool get isLoadingPollenData => _isLoadingPollenData;
+  bool get isLocatingNearestLocation => _isLocatingNearestLocation;
   bool get hasShownOffSeasonMessage => _hasShownOffSeasonMessage;
 
   //--------------------------------------------------------------------------
@@ -435,6 +438,78 @@ class HomeViewModel extends ChangeNotifier {
         return Colors.red;
       default:
         return Colors.grey;
+    }
+  }
+
+  //--------------------------------------------------------------------------
+  Future<Locations> selectNearestLocationFromDevice() async {
+    if (_isLocatingNearestLocation) {
+      throw Exception('Lociranje najbliže stanice je već u toku.');
+    }
+
+    _isLocatingNearestLocation = true;
+    notifyListeners();
+
+    try {
+      final currentLocations = _locations;
+      if (currentLocations == null || currentLocations.isEmpty) {
+        throw Exception('Nema dostupnih lokacija za izbor.');
+      }
+
+      final isServiceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!isServiceEnabled) {
+        throw Exception('Uključite geolokaciju na uređaju.');
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied) {
+        throw Exception(
+          'Dozvolite pristup geolokaciji da bismo našli najbližu stanicu.',
+        );
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception(
+          'Pristup geolokaciji je trajno odbijen. Omogućite ga u podešavanjima aplikacije.',
+        );
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      var minDistanceMeters = double.infinity;
+      Locations? nearestLocation;
+      for (final location in currentLocations) {
+        final distanceMeters = Geolocator.distanceBetween(
+          position.latitude,
+          position.longitude,
+          location.latitude,
+          location.longitude,
+        );
+        if (distanceMeters < minDistanceMeters) {
+          minDistanceMeters = distanceMeters;
+          nearestLocation = location;
+        }
+      }
+
+      if (nearestLocation == null) {
+        throw Exception('Najbliža lokacija nije pronađena.');
+      }
+
+      _selectedLocation = nearestLocation;
+      await fetchPollenData();
+      return nearestLocation;
+    } finally {
+      _isLocatingNearestLocation = false;
+      notifyListeners();
     }
   }
 }

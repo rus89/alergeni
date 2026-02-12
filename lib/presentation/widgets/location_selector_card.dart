@@ -9,12 +9,14 @@ class LocationSelectorCard extends StatelessWidget {
     this.selectedLocation,
     this.onLocationChanged,
     this.onMyLocationPressed,
+    this.isMyLocationLoading = false,
   });
 
   final List<Locations> locations;
   final Locations? selectedLocation;
   final ValueChanged<Locations>? onLocationChanged;
   final VoidCallback? onMyLocationPressed;
+  final bool isMyLocationLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +30,9 @@ class LocationSelectorCard extends StatelessWidget {
           children: [
             Text(
               'Lokacija',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
             Row(
@@ -60,8 +61,14 @@ class LocationSelectorCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 FloatingActionButton.small(
                   tooltip: 'Koristi moju lokaciju',
-                  onPressed: onMyLocationPressed,
-                  child: const Icon(Icons.location_on),
+                  onPressed: isMyLocationLoading ? null : onMyLocationPressed,
+                  child: isMyLocationLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                        )
+                      : const Icon(Icons.location_on),
                 ),
               ],
             ),

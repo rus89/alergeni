@@ -97,13 +97,30 @@ class HomeScreen extends StatelessWidget {
             LocationSelectorCard(
               locations: viewModel.locations!,
               selectedLocation: viewModel.selectedLocation,
+              isMyLocationLoading: viewModel.isLocatingNearestLocation,
               onLocationChanged: viewModel.selectLocation,
-              onMyLocationPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Geolokacija će uskoro biti dostupna'),
-                  ),
-                );
+              onMyLocationPressed: () async {
+                try {
+                  final nearestLocation = await viewModel
+                      .selectNearestLocationFromDevice();
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Izabrana je najbliža lokacija: ${nearestLocation.name}',
+                      ),
+                    ),
+                  );
+                } catch (error) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        error.toString().replaceFirst('Exception: ', ''),
+                      ),
+                    ),
+                  );
+                }
               },
             ),
             const SizedBox(height: _sectionSpacing),

@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Aplikacija koristi vašu lokaciju da automatski izabere najbližu mernu stanicu polena.</string>
 </dict>
 </plist>
