@@ -1,5 +1,4 @@
 import 'package:alergeni/core/helpers/severity_helper.dart';
-import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/presentation/viewmodels/home_view_model.dart';
 import 'package:alergeni/presentation/widgets/empty_state.dart';
 import 'package:alergeni/presentation/widgets/error_state.dart';
@@ -320,11 +319,4 @@ class HomeScreen extends StatelessWidget {
         return null;
     }
   }
-}
-
-class AllergenWithConcentration {
-  final Allergen allergen;
-  final int concentration;
-
-  AllergenWithConcentration(this.allergen, this.concentration);
 }

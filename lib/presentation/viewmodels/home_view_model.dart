@@ -445,3 +445,10 @@ class _PollenSnapshot {
 
   const _PollenSnapshot({required this.pollen, required this.concentrations});
 }
+
+class AllergenWithConcentration {
+  final Allergen allergen;
+  final int concentration;
+
+  AllergenWithConcentration(this.allergen, this.concentration);
+}
