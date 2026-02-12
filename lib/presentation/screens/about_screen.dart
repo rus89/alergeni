@@ -168,124 +168,235 @@ class _AboutScreenState extends State<AboutScreen> {
           return const Center(child: Text('Nema dostupnih alergena'));
         }
 
-        // Sort by type, then by allergenicity index (low to high)
-        allergens.sort((a, b) {
-          final typeCompare = a.type.compareTo(b.type);
-          if (typeCompare != 0) return typeCompare;
-          return a.allergenicityIndex.compareTo(b.allergenicityIndex);
-        });
+        final groupedAllergens = _groupAllergensByType(allergens);
 
-        // Group by type
-        final Map<int, List<Allergen>> groupedAllergens = {};
-        for (var allergen in allergens) {
-          groupedAllergens.putIfAbsent(allergen.type, () => []).add(allergen);
-        }
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 700;
+            if (isCompact) {
+              return _buildCompactAllergensList(context, groupedAllergens);
+            }
 
-        return Card(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Ime (Lat)')),
-                DataColumn(label: Text('Ime (Sr)')),
-                DataColumn(label: Text('Jačina alergena')),
-              ],
-              rows: [
-                // Build rows for each type group
-                for (var typeId in groupedAllergens.keys.toList()..sort()) ...[
-                  // Section header for allergen type
-                  DataRow(
-                    color: WidgetStateProperty.all(
-                      AllergenTypeHelper.getColorForType(typeId).withAlpha(30),
+            return _buildWideAllergensTable(
+              context,
+              groupedAllergens,
+              constraints.maxWidth,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  //--------------------------------------------------------------------------
+  Map<int, List<Allergen>> _groupAllergensByType(List<Allergen> allergens) {
+    final sortedAllergens = allergens.toList()
+      ..sort((a, b) {
+        final typeCompare = a.type.compareTo(b.type);
+        if (typeCompare != 0) return typeCompare;
+        return a.allergenicityIndex.compareTo(b.allergenicityIndex);
+      });
+
+    final groupedAllergens = <int, List<Allergen>>{};
+    for (final allergen in sortedAllergens) {
+      groupedAllergens.putIfAbsent(allergen.type, () => []).add(allergen);
+    }
+    return groupedAllergens;
+  }
+
+  //--------------------------------------------------------------------------
+  Widget _buildWideAllergensTable(
+    BuildContext context,
+    Map<int, List<Allergen>> groupedAllergens,
+    double maxWidth,
+  ) {
+    return Card(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: maxWidth - 32),
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('Ime (Lat)')),
+              DataColumn(label: Text('Ime (Sr)')),
+              DataColumn(label: Text('Jačina alergena')),
+            ],
+            rows: [
+              for (final typeId in groupedAllergens.keys.toList()..sort()) ...[
+                DataRow(
+                  color: WidgetStateProperty.all(
+                    AllergenTypeHelper.getColorForType(typeId).withAlpha(30),
+                  ),
+                  cells: [
+                    DataCell(
+                      Row(
+                        children: [
+                          AllergenTypeHelper.getIconForType(typeId),
+                          const SizedBox(width: 8),
+                          Text(
+                            AllergenTypeHelper.getLocalizedNameForType(typeId),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '(${groupedAllergens[typeId]!.length})',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Colors.grey[600],
+                                  fontStyle: FontStyle.italic,
+                                ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const DataCell(SizedBox()),
+                    const DataCell(SizedBox()),
+                  ],
+                ),
+                ...groupedAllergens[typeId]!.map(
+                  (allergen) => DataRow(
                     cells: [
                       DataCell(
-                        Row(
+                        Text(
+                          allergen.name,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                      DataCell(
+                        Text(
+                          allergen.localizedName,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      DataCell(_buildAllergenicityChip(context, allergen)),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  //--------------------------------------------------------------------------
+  Widget _buildCompactAllergensList(
+    BuildContext context,
+    Map<int, List<Allergen>> groupedAllergens,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final typeId in groupedAllergens.keys.toList()..sort()) ...[
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      AllergenTypeHelper.getIconForType(typeId),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          AllergenTypeHelper.getLocalizedNameForType(typeId),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      Text(
+                        '${groupedAllergens[typeId]!.length}',
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ...groupedAllergens[typeId]!.map(
+                    (allergen) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainer,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
                           children: [
-                            AllergenTypeHelper.getIconForType(typeId),
-                            const SizedBox(width: 8),
-                            Text(
-                              AllergenTypeHelper.getLocalizedNameForType(
-                                typeId,
-                              ),
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '(${groupedAllergens[typeId]!.length})',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: Colors.grey[600],
-                                    fontStyle: FontStyle.italic,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    allergen.localizedName,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    allergen.name,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          fontStyle: FontStyle.italic,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ),
+                            const SizedBox(width: 8),
+                            _buildAllergenicityChip(context, allergen),
                           ],
                         ),
                       ),
-                      const DataCell(SizedBox()),
-                      const DataCell(SizedBox()),
-                    ],
-                  ),
-                  // Allergen rows for this type
-                  ...groupedAllergens[typeId]!.map(
-                    (allergen) => DataRow(
-                      cells: [
-                        DataCell(
-                          Text(
-                            allergen.name,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(fontStyle: FontStyle.italic),
-                          ),
-                        ),
-                        DataCell(
-                          Text(
-                            allergen.localizedName,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        DataCell(
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  SeverityHelper.allergenicityColorForConcentration(
-                                    allergenicityIndex:
-                                        allergen.allergenicityIndex,
-                                    concentration: 100,
-                                  ).withAlpha(50),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              SeverityHelper.allergenicityLabel(
-                                allergen.allergenicityIndex,
-                              ),
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color:
-                                        SeverityHelper.allergenicityColorForConcentration(
-                                          allergenicityIndex:
-                                              allergen.allergenicityIndex,
-                                          concentration: 100,
-                                        ),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
           ),
-        );
-      },
+          const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+
+  //--------------------------------------------------------------------------
+  Widget _buildAllergenicityChip(BuildContext context, Allergen allergen) {
+    final color = SeverityHelper.allergenicityColorForConcentration(
+      allergenicityIndex: allergen.allergenicityIndex,
+      concentration: 100,
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withAlpha(50),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        SeverityHelper.allergenicityLabel(allergen.allergenicityIndex),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 
