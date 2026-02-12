@@ -76,6 +76,11 @@ class HomeViewModel extends ChangeNotifier {
     ]);
 
     _updateOffSeasonState();
+
+    // If we preselect a location on startup, load its pollen data as well.
+    if (_selectedLocation != null) {
+      await fetchPollenData();
+    }
   }
 
   //--------------------------------------------------------------------------
@@ -86,8 +91,17 @@ class HomeViewModel extends ChangeNotifier {
       notifyListeners();
 
       final locations = await _pollenRepository.fetchLocations();
+      final previousSelectedId = _selectedLocation?.id;
 
       _locations = locations;
+      if (locations.isEmpty) {
+        _selectedLocation = null;
+      } else if (previousSelectedId == null) {
+        _selectedLocation = locations.first;
+      } else {
+        _selectedLocation =
+            _findLocationById(locations, previousSelectedId) ?? locations.first;
+      }
       _isLoadingLocations = false;
       notifyListeners();
     } catch (e) {
@@ -333,6 +347,16 @@ class HomeViewModel extends ChangeNotifier {
   //--------------------------------------------------------------------------
   void refreshPollenData() {
     fetchPollenData();
+  }
+
+  //--------------------------------------------------------------------------
+  Locations? _findLocationById(List<Locations> locations, int id) {
+    for (final location in locations) {
+      if (location.id == id) {
+        return location;
+      }
+    }
+    return null;
   }
 
   //--------------------------------------------------------------------------

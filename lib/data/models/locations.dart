@@ -32,4 +32,18 @@ class Locations {
       'description': description,
     };
   }
+
+  @override
+  String toString() {
+    return 'Locations(id: $id, name: $name, latitude: $latitude, longitude: $longitude, description: $description)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Locations && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }
