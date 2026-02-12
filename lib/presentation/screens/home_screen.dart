@@ -14,22 +14,24 @@ import 'package:provider/provider.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  static const double _sectionSpacing = 16;
+
   void _showOffSeasonDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Obaveštenje'),
+        title: const Text('Obaveštenje o sezoni'),
         content: const Text(
-          'Sezona praćenja polena je završena. \n\n'
-          'Novi ciklus praćenja počinje u Februaru naredne godine.',
+          'Sezona praćenja polena je završena.\n\n'
+          'Novi ciklus praćenja počinje u februaru naredne godine.',
         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: const Text('OK'),
+            child: const Text('U redu'),
           ),
         ],
       ),
@@ -75,7 +77,7 @@ class HomeScreen extends StatelessWidget {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -91,7 +93,7 @@ class HomeScreen extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: _sectionSpacing),
 
           if (viewModel.selectedLocation != null &&
               (viewModel.concentrations != null &&
@@ -99,19 +101,19 @@ class HomeScreen extends StatelessWidget {
                   viewModel.siteData != null &&
                       viewModel.siteData!.isNotEmpty)) ...[
             _buildWeeklySummaryCard(context, viewModel),
-            const SizedBox(height: 20),
+            const SizedBox(height: _sectionSpacing),
           ],
 
           if (viewModel.concentrations != null &&
               viewModel.concentrations!.isNotEmpty) ...[
             TodaySnapshotCard(items: _buildSnapshotItems(viewModel)),
-            const SizedBox(height: 20),
+            const SizedBox(height: _sectionSpacing),
           ],
 
           if (viewModel.concentrations != null &&
               viewModel.concentrations!.isNotEmpty) ...[
             _buildTopAllergensSection(context, viewModel),
-            const SizedBox(height: 20),
+            const SizedBox(height: _sectionSpacing),
           ],
         ],
       ),

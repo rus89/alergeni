@@ -45,6 +45,7 @@ class _AboutScreenState extends State<AboutScreen> {
 
   //--------------------------------------------------------------------------
   Widget _buildBody(BuildContext context, Future<List<Allergen>> allergens) {
+    final mutedTextColor = Theme.of(context).colorScheme.onSurfaceVariant;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -69,7 +70,7 @@ class _AboutScreenState extends State<AboutScreen> {
                   'Verzija 1.0.0',
                   style: Theme.of(
                     context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  ).textTheme.bodyMedium?.copyWith(color: mutedTextColor),
                 ),
 
                 const SizedBox(height: 16.0),
@@ -129,7 +130,7 @@ class _AboutScreenState extends State<AboutScreen> {
                   'Aplikaciju je razvio samostalni programer kao lični projekat sa ciljem pružanja korisnih informacija osobama koje pate od alergija na polen.',
                   style: Theme.of(
                     context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  ).textTheme.bodyMedium?.copyWith(color: mutedTextColor),
                   textAlign: TextAlign.center,
                 ),
               ],

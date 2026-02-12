@@ -47,55 +47,62 @@ class TopAllergensCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text(
-                  'Top 5 alergena',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        'Top 5 alergena',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
                       ),
-                ),
-                const SizedBox(width: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withAlpha(51),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Alergijski potencijal',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                        ),
+                      ),
+                    ],
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withAlpha(51),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'Alergijski potencijal',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.grey),
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  'Koncentracija (ug/m³)',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: Colors.grey),
                 ),
               ],
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                'Koncentracija (µg/m³)',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+              ),
             ),
             if (showTrendHint) ...[
               const SizedBox(height: 6),
               Text(
                 'Trend (↑ rastući, → stabilan, ↓ opadajući) u odnosu na prethodni period.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey,
-                      fontStyle: FontStyle.italic,
-                    ),
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ],
             const SizedBox(height: 16),
-            ...items.map((item) => _TopAllergenRow(
-                  item: item,
-                  maxValue: maxValue,
-                )),
+            ...items.map(
+              (item) => _TopAllergenRow(item: item, maxValue: maxValue),
+            ),
           ],
         ),
       ),
@@ -110,19 +117,13 @@ class TopAllergensCardLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Card(
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: LoadingState(),
-      ),
+      child: Padding(padding: EdgeInsets.all(16), child: LoadingState()),
     );
   }
 }
 
 class _TopAllergenRow extends StatelessWidget {
-  const _TopAllergenRow({
-    required this.item,
-    required this.maxValue,
-  });
+  const _TopAllergenRow({required this.item, required this.maxValue});
 
   final TopAllergenItem item;
   final double maxValue;

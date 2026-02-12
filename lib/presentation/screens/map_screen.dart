@@ -94,14 +94,14 @@ class _MapViewState extends State<_MapView> {
           ],
         ),
         // Legend
-        Positioned(bottom: 20, left: 20, child: _buildLegend()),
+        Positioned(bottom: 20, left: 16, child: _buildLegend(context)),
         _buildFloatingControls(),
       ],
     );
   }
 
   //--------------------------------------------------------------------------
-  Widget _buildLegend() {
+  Widget _buildLegend(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -119,24 +119,36 @@ class _MapViewState extends State<_MapView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Legenda',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.info_outline, size: 14),
+              const SizedBox(width: 6),
+              Text(
+                'Legenda',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           _buildLegendItem(
             AllergenTypeHelper.getColorForType(AllergenTypeHelper.treeTypeId),
             'Drveće',
+            context,
           ),
           const SizedBox(height: 4),
           _buildLegendItem(
             AllergenTypeHelper.getColorForType(AllergenTypeHelper.grassTypeId),
             'Trave',
+            context,
           ),
           const SizedBox(height: 4),
           _buildLegendItem(
             AllergenTypeHelper.getColorForType(AllergenTypeHelper.weedTypeId),
-            'Korov',
+            'Korovi',
+            context,
           ),
         ],
       ),
@@ -144,7 +156,7 @@ class _MapViewState extends State<_MapView> {
   }
 
   //----------------------------------------------------------------------------
-  Widget _buildLegendItem(Color color, String label) {
+  Widget _buildLegendItem(Color color, String label, BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -154,7 +166,12 @@ class _MapViewState extends State<_MapView> {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 12)),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+        ),
       ],
     );
   }
@@ -170,6 +187,7 @@ class _MapViewState extends State<_MapView> {
           FloatingActionButton(
             heroTag: 'zoom_in',
             mini: true,
+            tooltip: 'Uvećaj mapu',
             onPressed: () {
               _mapController.move(
                 _mapController.camera.center,
@@ -182,6 +200,7 @@ class _MapViewState extends State<_MapView> {
           FloatingActionButton(
             heroTag: 'zoom_out',
             mini: true,
+            tooltip: 'Umanji mapu',
             onPressed: () {
               _mapController.move(
                 _mapController.camera.center,
@@ -194,6 +213,7 @@ class _MapViewState extends State<_MapView> {
           FloatingActionButton(
             heroTag: 'recenter',
             mini: true,
+            tooltip: 'Vrati početni prikaz',
             onPressed: () {
               _mapController.move(const LatLng(44.0165, 21.0059), 7.0);
             },
