@@ -1,5 +1,4 @@
-import 'package:alergeni/core/constants/severity_thresholds.dart';
-import 'package:alergeni/core/theme/app_theme.dart';
+import 'package:alergeni/core/helpers/severity_helper.dart';
 import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/presentation/viewmodels/home_view_model.dart';
 import 'package:alergeni/presentation/widgets/empty_state.dart';
@@ -119,29 +118,32 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWeeklySummaryCard(BuildContext context, HomeViewModel viewModel) {
+  Widget _buildWeeklySummaryCard(
+    BuildContext context,
+    HomeViewModel viewModel,
+  ) {
     final overallStatus =
         viewModel.siteData != null && viewModel.siteData!.isNotEmpty
-            ? viewModel.fiveTierLevel
-            : viewModel.getOverallStatus();
+        ? viewModel.fiveTierLevel
+        : viewModel.getOverallStatus();
 
     final statusColor =
         viewModel.siteData != null && viewModel.siteData!.isNotEmpty
-            ? viewModel.getFiveTierColor()
-            : viewModel.getOverallStatusColor();
+        ? viewModel.getFiveTierColor()
+        : viewModel.getOverallStatusColor();
 
     final totalCount =
         viewModel.lowCount + viewModel.mediumCount + viewModel.highCount;
 
     final percentage = totalCount > 0
         ? ((viewModel.mediumCount + viewModel.highCount) / totalCount * 100)
-            .toStringAsFixed(0)
+              .toStringAsFixed(0)
         : '0';
 
     final weekOrDateLabel =
         viewModel.siteData != null && viewModel.siteData!.isNotEmpty
-            ? 'Nedelja ${viewModel.siteData!.first.week}'
-            : viewModel.selectedDate ?? 'N/A';
+        ? 'Nedelja ${viewModel.siteData!.first.week}'
+        : viewModel.selectedDate ?? 'N/A';
 
     return WeeklySummaryCard(
       locationName: viewModel.selectedLocation!.name,
@@ -175,7 +177,9 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildTopAllergensSection(
-      BuildContext context, HomeViewModel viewModel) {
+    BuildContext context,
+    HomeViewModel viewModel,
+  ) {
     if (viewModel.isLoadingPollenData) {
       return const TopAllergensCardLoading();
     }
@@ -213,8 +217,11 @@ class HomeScreen extends StatelessWidget {
         (a) => a.id == conc.allergenId,
         orElse: () => viewModel.allergens!.first,
       );
-      final color = _getAllergenicityColor(allergen, conc.value);
-      final severityLabel = _getCombinedSeverityLabel(allergen, conc.value);
+      final color = SeverityHelper.allergenicityColorForConcentration(
+        allergenicityIndex: allergen.allergenicityIndex,
+        concentration: conc.value,
+      );
+      final severityLabel = SeverityHelper.concentrationLabel(conc.value);
       final trend = trendMap[allergen.id];
       final trendIcon = _getTrendIcon(trend);
 
@@ -232,8 +239,8 @@ class HomeScreen extends StatelessWidget {
     return TopAllergensCard(
       items: items,
       maxValue: maxValue,
-      showTrendHint: viewModel.siteData != null &&
-          viewModel.siteData!.isNotEmpty,
+      showTrendHint:
+          viewModel.siteData != null && viewModel.siteData!.isNotEmpty,
     );
   }
 
@@ -280,64 +287,21 @@ class HomeScreen extends StatelessWidget {
 
         final mostDangerous = allergensForType.first;
         result[typeId] = {
-          'severity': _getSeverityLabel(mostDangerous.concentration),
-          'color': _getAllergenicityColor(
-            mostDangerous.allergen,
+          'severity': SeverityHelper.concentrationLabel(
             mostDangerous.concentration,
           ),
-          'allergenicityLabel': mostDangerous.allergen.allergenicityDisplay,
+          'color': SeverityHelper.allergenicityColorForConcentration(
+            allergenicityIndex: mostDangerous.allergen.allergenicityIndex,
+            concentration: mostDangerous.concentration,
+          ),
+          'allergenicityLabel': SeverityHelper.allergenicityLabel(
+            mostDangerous.allergen.allergenicityIndex,
+          ),
         };
       }
     }
 
     return result;
-  }
-
-  Color _getAllergenicityColor(Allergen allergen, int concentration) {
-    Color baseColor;
-    switch (allergen.allergenicityIndex) {
-      case 1:
-        baseColor = AppTheme.severityLow;
-        break;
-      case 2:
-        baseColor = AppTheme.severityMedium;
-        break;
-      case 3:
-        baseColor = AppTheme.severityHigh;
-        break;
-      default:
-        baseColor = Colors.grey;
-    }
-
-    if (concentration >= SeverityThresholds.highMin) {
-      return baseColor;
-    } else if (concentration >= SeverityThresholds.mediumMin) {
-      return _lightenColor(baseColor, 0.1);
-    } else {
-      return _lightenColor(baseColor, 0.3);
-    }
-  }
-
-  Color _lightenColor(Color color, double factor) {
-    final hsl = HSLColor.fromColor(color);
-    final lightness = (hsl.lightness + factor).clamp(0.0, 1.0);
-    return hsl.withLightness(lightness).toColor();
-  }
-
-  String _getCombinedSeverityLabel(Allergen allergen, int concentration) {
-    final concentrationLevel = _getSeverityLabel(concentration);
-    return '$concentrationLevel ';
-  }
-
-  String _getSeverityLabel(int value) {
-    if (value >= SeverityThresholds.highMin) {
-      return 'Visoka';
-    } else if (value >= SeverityThresholds.mediumMin) {
-      return 'Srednja';
-    } else if (value >= SeverityThresholds.lowMin) {
-      return 'Niska';
-    }
-    return 'Nema';
   }
 
   IconData? _getTrendIcon(int? trend) {

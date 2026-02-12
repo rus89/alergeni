@@ -1,4 +1,5 @@
 import 'package:alergeni/core/helpers/allergen_type_helper.dart';
+import 'package:alergeni/core/helpers/severity_helper.dart';
 import 'package:alergeni/core/theme/app_theme.dart';
 import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/presentation/viewmodels/home_view_model.dart';
@@ -250,20 +251,26 @@ class _AboutScreenState extends State<AboutScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: _getAllergenicitySeverityColor(
-                                allergen.allergenicityIndex,
-                              ).withAlpha(50),
+                              color:
+                                  SeverityHelper.allergenicityColorForConcentration(
+                                    allergenicityIndex:
+                                        allergen.allergenicityIndex,
+                                    concentration: 100,
+                                  ).withAlpha(50),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
-                              _getAllergenicityLabel(
+                              SeverityHelper.allergenicityLabel(
                                 allergen.allergenicityIndex,
                               ),
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
-                                    color: _getAllergenicitySeverityColor(
-                                      allergen.allergenicityIndex,
-                                    ),
+                                    color:
+                                        SeverityHelper.allergenicityColorForConcentration(
+                                          allergenicityIndex:
+                                              allergen.allergenicityIndex,
+                                          concentration: 100,
+                                        ),
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
@@ -319,25 +326,5 @@ class _AboutScreenState extends State<AboutScreen> {
         ),
       ),
     );
-  }
-
-  //--------------------------------------------------------------------------
-  Color _getAllergenicitySeverityColor(int index) {
-    return switch (index) {
-      1 => AppTheme.severityLow,
-      2 => AppTheme.severityMedium,
-      3 => AppTheme.severityHigh,
-      _ => Colors.grey,
-    };
-  }
-
-  //--------------------------------------------------------------------------
-  String _getAllergenicityLabel(int index) {
-    return switch (index) {
-      1 => 'Slab',
-      2 => 'Srednji',
-      3 => 'Jak',
-      _ => 'Nepoznato',
-    };
   }
 }
