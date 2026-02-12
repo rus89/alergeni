@@ -3,6 +3,7 @@ import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/data/models/allergen_types.dart';
 import 'package:alergeni/data/models/concentrations.dart';
 import 'package:alergeni/data/models/locations.dart';
+import 'package:alergeni/data/models/paginated_response.dart';
 import 'package:alergeni/data/models/pollens.dart';
 import 'package:alergeni/data/models/site.dart';
 import 'package:alergeni/data/repositories/pollen_repository.dart';
@@ -200,79 +201,107 @@ class HomeViewModel extends ChangeNotifier {
 
   //--------------------------------------------------------------------------
   Future<void> fetchPollenConcentrationData() async {
-    // Step 1: Try to get today's pollen data for the selected location
     final today = DateTime.now();
-    final todayStr =
-        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-    var pollensResponse = await _pollenRepository.fetchPollensByLocationAndDate(
-      _selectedLocation!.id,
-      todayStr,
+    final locationId = _selectedLocation!.id;
+    final pollensResponse = await _fetchPreferredPollensForLocation(
+      locationId: locationId,
+      today: today,
     );
 
-    Pollens? pollen;
-
-    if (pollensResponse.results.isNotEmpty) {
-      pollen = pollensResponse.results.first;
-    } else {
-      // If no data for today, try to get the most recent data for this location
-      final lastYear = today.year - 1;
-      final dateAfter = '$lastYear-01-01';
-      pollensResponse = await _pollenRepository.fetchRecentPollensByLocation(
-        _selectedLocation!.id,
-        dateAfter: dateAfter,
-      );
-    }
-
-    if (pollensResponse.results.isEmpty) {
-      // No data - off season or no data for location
-      final twoYearsAgo = today.year - 2;
-      final dateAfter = '$twoYearsAgo-01-01';
-      pollensResponse = await _pollenRepository.fetchRecentPollensByLocation(
-        _selectedLocation!.id,
-        dateAfter: dateAfter,
-      );
-    }
-
-    if (pollensResponse.results.isEmpty) {
-      _concentrations = null;
-      selectedDate = null;
-      _pollenDate = null;
+    final snapshot = await _selectLatestSnapshotWithPositiveConcentrations(
+      pollensResponse.results,
+    );
+    if (snapshot == null) {
+      _clearSelectedPollenState();
       return;
     }
 
-    List<Concentrations> concentrations = [];
+    _updateSeverityCounts(snapshot.concentrations);
+    _updateSelectedPollenState(
+      pollen: snapshot.pollen,
+      concentrations: snapshot.concentrations,
+    );
+  }
 
-    // sort by date descending to get the most recent record
-    final sortedPollens = pollensResponse.results.toList()
+  //--------------------------------------------------------------------------
+  Future<PaginatedResponse<Pollens>> _fetchPreferredPollensForLocation({
+    required int locationId,
+    required DateTime today,
+  }) async {
+    final todayResponse = await _pollenRepository.fetchPollensByLocationAndDate(
+      locationId,
+      _formatApiDate(today),
+    );
+    if (todayResponse.results.isNotEmpty) {
+      return todayResponse;
+    }
+
+    final oneYearBack = await _pollenRepository.fetchRecentPollensByLocation(
+      locationId,
+      dateAfter: '${today.year - 1}-01-01',
+    );
+    if (oneYearBack.results.isNotEmpty) {
+      return oneYearBack;
+    }
+
+    return _pollenRepository.fetchRecentPollensByLocation(
+      locationId,
+      dateAfter: '${today.year - 2}-01-01',
+    );
+  }
+
+  //--------------------------------------------------------------------------
+  Future<_PollenSnapshot?> _selectLatestSnapshotWithPositiveConcentrations(
+    List<Pollens> pollens,
+  ) async {
+    if (pollens.isEmpty) return null;
+
+    final sortedPollens = pollens.toList()
       ..sort((a, b) => b.date.compareTo(a.date));
-    for (var p in sortedPollens) {
-      if (p.concentrationIds.isNotEmpty) {
-        pollen = p;
-        concentrations = await _pollenRepository.fetchConcentrationsByIds(
-          pollen.concentrationIds,
-        );
 
-        if (concentrations.any((c) => c.value > 0)) {
-          break;
-        }
+    for (final pollen in sortedPollens) {
+      if (pollen.concentrationIds.isEmpty) continue;
+
+      final concentrations = await _pollenRepository.fetchConcentrationsByIds(
+        pollen.concentrationIds,
+      );
+      if (_hasPositiveConcentration(concentrations)) {
+        return _PollenSnapshot(pollen: pollen, concentrations: concentrations);
       }
     }
 
-    if (pollen == null ||
-        concentrations.isEmpty ||
-        !concentrations.any((c) => c.value > 0)) {
-      _concentrations = null;
-      selectedDate = null;
-      _pollenDate = null;
-      return;
-    }
+    return null;
+  }
 
-    // Step 3: Count severity levels
+  //--------------------------------------------------------------------------
+  bool _hasPositiveConcentration(List<Concentrations> concentrations) {
+    return concentrations.any((c) => c.value > 0);
+  }
+
+  //--------------------------------------------------------------------------
+  void _clearSelectedPollenState() {
+    _concentrations = null;
+    selectedDate = null;
+    _pollenDate = null;
+  }
+
+  //--------------------------------------------------------------------------
+  void _updateSelectedPollenState({
+    required Pollens pollen,
+    required List<Concentrations> concentrations,
+  }) {
+    _concentrations = concentrations;
+    _pollenDate = pollen.date;
+    selectedDate = _formatDisplayDate(pollen.date);
+  }
+
+  //--------------------------------------------------------------------------
+  void _updateSeverityCounts(List<Concentrations> concentrations) {
     _lowCount = 0;
     _mediumCount = 0;
     _highCount = 0;
 
-    for (var conc in concentrations) {
+    for (final conc in concentrations) {
       if (conc.value >= SeverityThresholds.lowMin &&
           conc.value <= SeverityThresholds.lowMax) {
         _lowCount++;
@@ -283,12 +312,16 @@ class HomeViewModel extends ChangeNotifier {
         _highCount++;
       }
     }
+  }
 
-    // Step 5: Update state with all data
-    _concentrations = concentrations;
-    _pollenDate = pollen.date;
-    selectedDate =
-        '${pollen.date.day.toString().padLeft(2, '0')}.${pollen.date.month.toString().padLeft(2, '0')}.${pollen.date.year}.';
+  //--------------------------------------------------------------------------
+  String _formatApiDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  //--------------------------------------------------------------------------
+  String _formatDisplayDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}.';
   }
 
   //--------------------------------------------------------------------------
@@ -380,4 +413,11 @@ class HomeViewModel extends ChangeNotifier {
         return Colors.grey;
     }
   }
+}
+
+class _PollenSnapshot {
+  final Pollens pollen;
+  final List<Concentrations> concentrations;
+
+  const _PollenSnapshot({required this.pollen, required this.concentrations});
 }
