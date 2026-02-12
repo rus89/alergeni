@@ -75,6 +75,17 @@ class HomeScreen extends StatelessWidget {
       return const EmptyState(title: 'Nema dostupnih lokacija.');
     }
 
+    final isInitialPollenDataLoading =
+        viewModel.isLoadingPollenData &&
+        viewModel.selectedLocation != null &&
+        viewModel.concentrations == null &&
+        (viewModel.siteData == null || viewModel.siteData!.isEmpty);
+    if (isInitialPollenDataLoading) {
+      return const LoadingState(
+        message: 'Učitavanje podataka za izabranu lokaciju...',
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
