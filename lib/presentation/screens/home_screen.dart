@@ -86,46 +86,50 @@ class HomeScreen extends StatelessWidget {
       );
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          LocationSelectorCard(
-            locations: viewModel.locations!,
-            selectedLocation: viewModel.selectedLocation,
-            onLocationChanged: viewModel.selectLocation,
-            onMyLocationPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Geolokacija će uskoro biti dostupna'),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: _sectionSpacing),
-
-          if (viewModel.selectedLocation != null &&
-              (viewModel.concentrations != null &&
-                      viewModel.concentrations!.isNotEmpty ||
-                  viewModel.siteData != null &&
-                      viewModel.siteData!.isNotEmpty)) ...[
-            _buildWeeklySummaryCard(context, viewModel),
+    return RefreshIndicator(
+      onRefresh: viewModel.fetchPollenData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LocationSelectorCard(
+              locations: viewModel.locations!,
+              selectedLocation: viewModel.selectedLocation,
+              onLocationChanged: viewModel.selectLocation,
+              onMyLocationPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Geolokacija će uskoro biti dostupna'),
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: _sectionSpacing),
-          ],
 
-          if (viewModel.concentrations != null &&
-              viewModel.concentrations!.isNotEmpty) ...[
-            TodaySnapshotCard(items: _buildSnapshotItems(viewModel)),
-            const SizedBox(height: _sectionSpacing),
-          ],
+            if (viewModel.selectedLocation != null &&
+                (viewModel.concentrations != null &&
+                        viewModel.concentrations!.isNotEmpty ||
+                    viewModel.siteData != null &&
+                        viewModel.siteData!.isNotEmpty)) ...[
+              _buildWeeklySummaryCard(context, viewModel),
+              const SizedBox(height: _sectionSpacing),
+            ],
 
-          if (viewModel.concentrations != null &&
-              viewModel.concentrations!.isNotEmpty) ...[
-            _buildTopAllergensSection(context, viewModel),
-            const SizedBox(height: _sectionSpacing),
+            if (viewModel.concentrations != null &&
+                viewModel.concentrations!.isNotEmpty) ...[
+              TodaySnapshotCard(items: _buildSnapshotItems(viewModel)),
+              const SizedBox(height: _sectionSpacing),
+            ],
+
+            if (viewModel.concentrations != null &&
+                viewModel.concentrations!.isNotEmpty) ...[
+              _buildTopAllergensSection(context, viewModel),
+              const SizedBox(height: _sectionSpacing),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
