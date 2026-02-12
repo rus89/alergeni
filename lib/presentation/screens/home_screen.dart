@@ -10,15 +10,33 @@ import 'package:alergeni/presentation/widgets/weekly_summary_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   static const double _sectionSpacing = 16;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final viewModel = context.read<HomeViewModel>();
+      if (viewModel.shouldShowOffSeasonDialog) {
+        _showOffSeasonDialog(context);
+        viewModel.hasShownOffSeasonMessage = true;
+      }
+    });
+  }
 
   void _showOffSeasonDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (context) => AlertDialog(
         title: const Text('Obaveštenje o sezoni'),
         content: const Text(
@@ -39,16 +57,6 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.read<HomeViewModel>();
-    if (viewModel.checkOffSeason()) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!viewModel.hasShownOffSeasonMessage) {
-          _showOffSeasonDialog(context);
-          viewModel.hasShownOffSeasonMessage = true;
-        }
-      });
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Početna'),
