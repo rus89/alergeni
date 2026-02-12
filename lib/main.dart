@@ -13,7 +13,10 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        Provider<PollenRepository>.value(value: pollenRepository),
+        Provider<PollenRepository>(
+          create: (_) => pollenRepository,
+          dispose: (_, repo) => repo.dispose(),
+        ),
         ChangeNotifierProvider(
           create: (_) =>
               HomeViewModel(pollenRepository: pollenRepository)

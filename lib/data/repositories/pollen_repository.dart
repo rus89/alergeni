@@ -16,6 +16,11 @@ class PollenRepository {
     : _apiService = apiService ?? PollenApiService();
 
   //--------------------------------------------------------------------------
+  void dispose() {
+    _apiService.dispose();
+  }
+
+  //--------------------------------------------------------------------------
   Future<List<AllergenTypes>> fetchAllergenTypes() async {
     final response = await _apiService.fetchAllergenTypes();
     return response;
