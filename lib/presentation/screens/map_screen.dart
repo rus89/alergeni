@@ -1,4 +1,5 @@
 import 'package:alergeni/core/helpers/allergen_type_helper.dart';
+import 'package:alergeni/core/helpers/severity_helper.dart';
 import 'package:alergeni/data/models/locations.dart';
 import 'package:alergeni/presentation/viewmodels/map_view_model.dart';
 import 'package:alergeni/presentation/widgets/empty_state.dart';
@@ -31,7 +32,10 @@ class MapScreen extends StatelessWidget {
             )
           : mapViewModel.locations == null || mapViewModel.locations!.isEmpty
           ? const EmptyState(title: 'Nema dostupnih lokacija.')
-          : _MapView(locations: mapViewModel.locations!),
+          : _MapView(
+              locations: mapViewModel.locations!,
+              mapViewModel: mapViewModel,
+            ),
     );
   }
 }
@@ -39,8 +43,9 @@ class MapScreen extends StatelessWidget {
 //--------------------------------------------------------------------------
 class _MapView extends StatefulWidget {
   final List<Locations> locations;
+  final MapViewModel mapViewModel;
 
-  const _MapView({required this.locations});
+  const _MapView({required this.locations, required this.mapViewModel});
 
   @override
   State<_MapView> createState() => _MapViewState();
@@ -82,9 +87,11 @@ class _MapViewState extends State<_MapView> {
                   height: 40,
                   child: GestureDetector(
                     onTap: () => _showLocationInfo(context, location),
-                    child: const Icon(
+                    child: Icon(
                       Icons.location_on,
-                      color: Colors.red,
+                      color: widget.mapViewModel.getPinColorForLocation(
+                        location.id,
+                      ),
                       size: 40,
                     ),
                   ),
@@ -133,25 +140,151 @@ class _MapViewState extends State<_MapView> {
             ],
           ),
           const SizedBox(height: 8),
-          _buildLegendItem(
-            AllergenTypeHelper.getColorForType(AllergenTypeHelper.treeTypeId),
-            'Drveće',
-            context,
-          ),
-          const SizedBox(height: 4),
-          _buildLegendItem(
-            AllergenTypeHelper.getColorForType(AllergenTypeHelper.grassTypeId),
-            'Trave',
-            context,
-          ),
-          const SizedBox(height: 4),
-          _buildLegendItem(
-            AllergenTypeHelper.getColorForType(AllergenTypeHelper.weedTypeId),
-            'Korovi',
-            context,
-          ),
+          _buildSeverityLegend(context),
+          const SizedBox(height: 10),
+          _buildTrendLegend(context),
         ],
       ),
+    );
+  }
+
+  //----------------------------------------------------------------------------
+  Widget _buildSeverityLegend(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Tipovi i potencijal alergena',
+          style: Theme.of(
+            context,
+          ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        _buildTypeSeverityRow(
+          context: context,
+          typeLabel: 'Drveće',
+          typeColor: AllergenTypeHelper.getColorForType(
+            AllergenTypeHelper.treeTypeId,
+          ),
+          severityLabels: const ['Nizak', 'Srednji', 'Visok'],
+        ),
+        const SizedBox(height: 4),
+        _buildTypeSeverityRow(
+          context: context,
+          typeLabel: 'Trave',
+          typeColor: AllergenTypeHelper.getColorForType(
+            AllergenTypeHelper.grassTypeId,
+          ),
+          severityLabels: const ['Srednji'],
+        ),
+        const SizedBox(height: 4),
+        _buildTypeSeverityRow(
+          context: context,
+          typeLabel: 'Korovi',
+          typeColor: AllergenTypeHelper.getColorForType(
+            AllergenTypeHelper.weedTypeId,
+          ),
+          severityLabels: const ['Nizak', 'Srednji', 'Visok'],
+        ),
+      ],
+    );
+  }
+
+  //----------------------------------------------------------------------------
+  Widget _buildTypeSeverityRow({
+    required BuildContext context,
+    required String typeLabel,
+    required Color typeColor,
+    required List<String> severityLabels,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          margin: const EdgeInsets.only(top: 4),
+          decoration: BoxDecoration(color: typeColor, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 210),
+          child: Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: [
+              Text(
+                '$typeLabel:',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              ...severityLabels.map(
+                (label) => _buildSeverityChip(context, label),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  //----------------------------------------------------------------------------
+  Widget _buildSeverityChip(BuildContext context, String label) {
+    final color = switch (label) {
+      'Nizak' => SeverityHelper.allergenicityBaseColor(1),
+      'Srednji' => SeverityHelper.allergenicityBaseColor(2),
+      'Visok' => SeverityHelper.allergenicityBaseColor(3),
+      _ => Colors.grey,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: color.withAlpha(36),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 10,
+        ),
+      ),
+    );
+  }
+
+  //----------------------------------------------------------------------------
+  Widget _buildTrendLegend(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Boja markera (trend)',
+          style: Theme.of(
+            context,
+          ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 6),
+        _buildLegendItem(
+          widget.mapViewModel.getPinColorForTrendValue(1),
+          'Opadajući',
+          context,
+        ),
+        const SizedBox(height: 4),
+        _buildLegendItem(
+          widget.mapViewModel.getPinColorForTrendValue(2),
+          'Stabilan',
+          context,
+        ),
+        const SizedBox(height: 4),
+        _buildLegendItem(
+          widget.mapViewModel.getPinColorForTrendValue(3),
+          'Rastući',
+          context,
+        ),
+      ],
     );
   }
 
@@ -226,16 +359,166 @@ class _MapViewState extends State<_MapView> {
 
   //--------------------------------------------------------------------------
   void _showLocationInfo(BuildContext context, Locations location) {
+    final mapViewModel = context.read<MapViewModel>();
     showModalBottomSheet(
       context: context,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(16),
+      isScrollControlled: true,
+      builder: (context) => _LocationInfoSheet(
+        location: location,
+        loadSummary: () =>
+            mapViewModel.getLocationSummary(locationId: location.id),
+      ),
+    );
+  }
+}
+
+class _LocationInfoSheet extends StatefulWidget {
+  final Locations location;
+  final Future<MapLocationSummary> Function() loadSummary;
+
+  const _LocationInfoSheet({required this.location, required this.loadSummary});
+
+  @override
+  State<_LocationInfoSheet> createState() => _LocationInfoSheetState();
+}
+
+class _LocationInfoSheetState extends State<_LocationInfoSheet> {
+  late Future<MapLocationSummary> _summaryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _summaryFuture = widget.loadSummary();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(location.name, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text('Lat: ${location.latitude}, Lng: ${location.longitude}'),
+            Text(widget.location.name, style: theme.textTheme.titleLarge),
+            const SizedBox(height: 6),
+            Text(
+              'Koordinate: ${widget.location.latitude.toStringAsFixed(4)}, '
+              '${widget.location.longitude.toStringAsFixed(4)}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              widget.location.description.trim().isNotEmpty
+                  ? widget.location.description
+                  : 'Opis lokacije nije dostupan.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            FutureBuilder<MapLocationSummary>(
+              future: _summaryFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                        ),
+                        SizedBox(width: 10),
+                        Text('Učitavanje sažetka za stanicu...'),
+                      ],
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sažetak trenutno nije dostupan.',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      TextButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _summaryFuture = widget.loadSummary();
+                          });
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Pokušaj ponovo'),
+                      ),
+                    ],
+                  );
+                }
+
+                final summary = snapshot.data;
+                if (summary == null || !summary.hasData) {
+                  return Text(
+                    'Nema detaljnih podataka za ovu stanicu u ovom trenutku.',
+                    style: theme.textTheme.bodyMedium,
+                  );
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: summary.riskColor.withAlpha(36),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Rizik: ${summary.riskLabel}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: summary.riskColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          summary.trendIcon,
+                          size: 18,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          summary.trendLabel,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                    if (summary.week != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Nedelja: ${summary.week}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),

@@ -410,10 +410,14 @@ class PollenApiService {
 
   //--------------------------------------------------------------------------
   Future<List<Site>> fetchSites({required int locationId}) async {
-    final response = await _getWithRetry(
-      Uri.parse('$_baseUrl/sites/$locationId/'),
+    final baseWithoutOpenData = _baseUrl.replaceFirst(
+      RegExp(r'/opendata$'),
+      '',
     );
 
+    final uri = Uri.parse('$baseWithoutOpenData/site/$locationId/');
+
+    final response = await _getWithRetry(uri);
     return _handleResponse<List<Site>>(
       response,
       (json) => (json as List<dynamic>)
