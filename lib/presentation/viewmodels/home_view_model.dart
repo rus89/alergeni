@@ -1,17 +1,17 @@
 import 'dart:async';
 
-import 'package:alergeni/core/constants/severity_thresholds.dart';
-import 'package:alergeni/data/models/allergen.dart';
-import 'package:alergeni/data/models/allergen_types.dart';
-import 'package:alergeni/data/models/concentrations.dart';
-import 'package:alergeni/data/models/locations.dart';
-import 'package:alergeni/data/models/paginated_response.dart';
-import 'package:alergeni/data/models/pollens.dart';
-import 'package:alergeni/data/models/site.dart';
-import 'package:alergeni/data/repositories/pollen_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:udahni/core/constants/severity_thresholds.dart';
+import 'package:udahni/data/models/allergen.dart';
+import 'package:udahni/data/models/allergen_types.dart';
+import 'package:udahni/data/models/concentrations.dart';
+import 'package:udahni/data/models/locations.dart';
+import 'package:udahni/data/models/paginated_response.dart';
+import 'package:udahni/data/models/pollens.dart';
+import 'package:udahni/data/models/site.dart';
+import 'package:udahni/data/repositories/pollen_repository.dart';
 
 class HomeViewModel extends ChangeNotifier {
   final PollenRepository _pollenRepository;

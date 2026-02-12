@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:alergeni/data/models/locations.dart';
-import 'package:alergeni/data/models/site.dart';
-import 'package:alergeni/data/repositories/pollen_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:udahni/data/models/locations.dart';
+import 'package:udahni/data/models/site.dart';
+import 'package:udahni/data/repositories/pollen_repository.dart';
 
 class MapViewModel extends ChangeNotifier {
   final PollenRepository _pollenRepository;

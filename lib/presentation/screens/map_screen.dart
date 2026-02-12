@@ -1,14 +1,14 @@
-import 'package:alergeni/core/helpers/allergen_type_helper.dart';
-import 'package:alergeni/core/helpers/severity_helper.dart';
-import 'package:alergeni/data/models/locations.dart';
-import 'package:alergeni/presentation/viewmodels/map_view_model.dart';
-import 'package:alergeni/presentation/widgets/empty_state.dart';
-import 'package:alergeni/presentation/widgets/error_state.dart';
-import 'package:alergeni/presentation/widgets/loading_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:udahni/core/helpers/allergen_type_helper.dart';
+import 'package:udahni/core/helpers/severity_helper.dart';
+import 'package:udahni/data/models/locations.dart';
+import 'package:udahni/presentation/viewmodels/map_view_model.dart';
+import 'package:udahni/presentation/widgets/empty_state.dart';
+import 'package:udahni/presentation/widgets/error_state.dart';
+import 'package:udahni/presentation/widgets/loading_state.dart';
 
 //--------------------------------------------------------------------------
 class MapScreen extends StatelessWidget {
@@ -76,7 +76,7 @@ class _MapViewState extends State<_MapView> {
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.alergeni',
+              userAgentPackageName: 'com.serbiaOpenData.udahni',
               maxZoom: 19,
             ),
             MarkerLayer(

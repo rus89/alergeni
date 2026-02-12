@@ -1,10 +1,10 @@
-import 'package:alergeni/core/helpers/allergen_type_helper.dart';
-import 'package:alergeni/core/helpers/severity_helper.dart';
-import 'package:alergeni/core/theme/app_theme.dart';
-import 'package:alergeni/data/models/allergen.dart';
-import 'package:alergeni/presentation/viewmodels/home_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:udahni/core/helpers/allergen_type_helper.dart';
+import 'package:udahni/core/helpers/severity_helper.dart';
+import 'package:udahni/core/theme/app_theme.dart';
+import 'package:udahni/data/models/allergen.dart';
+import 'package:udahni/presentation/viewmodels/home_view_model.dart';
 
 //--------------------------------------------------------------------------
 class AboutScreen extends StatefulWidget {
@@ -55,7 +55,7 @@ class _AboutScreenState extends State<AboutScreen> {
             child: Column(
               children: [
                 // logo
-                const Icon(Icons.eco, size: 80, color: AppTheme.primaryGreen),
+                Image.asset('assets/icon/icon.png', width: 80, height: 80),
                 const SizedBox(height: 8.0),
                 Text(
                   'Udahni',

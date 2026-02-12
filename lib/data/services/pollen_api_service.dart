@@ -3,15 +3,15 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:alergeni/core/config/api_config.dart';
-import 'package:alergeni/data/models/allergen.dart';
-import 'package:alergeni/data/models/allergen_types.dart';
-import 'package:alergeni/data/models/concentrations.dart';
-import 'package:alergeni/data/models/locations.dart';
-import 'package:alergeni/data/models/paginated_response.dart';
-import 'package:alergeni/data/models/pollens.dart';
-import 'package:alergeni/data/models/site.dart';
 import 'package:http/http.dart' as http;
+import 'package:udahni/core/config/api_config.dart';
+import 'package:udahni/data/models/allergen.dart';
+import 'package:udahni/data/models/allergen_types.dart';
+import 'package:udahni/data/models/concentrations.dart';
+import 'package:udahni/data/models/locations.dart';
+import 'package:udahni/data/models/paginated_response.dart';
+import 'package:udahni/data/models/pollens.dart';
+import 'package:udahni/data/models/site.dart';
 
 class PollenApiService {
   final http.Client _httpClient;

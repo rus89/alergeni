@@ -1,14 +1,14 @@
-import 'package:alergeni/core/helpers/severity_helper.dart';
-import 'package:alergeni/presentation/viewmodels/home_view_model.dart';
-import 'package:alergeni/presentation/widgets/empty_state.dart';
-import 'package:alergeni/presentation/widgets/error_state.dart';
-import 'package:alergeni/presentation/widgets/loading_state.dart';
-import 'package:alergeni/presentation/widgets/location_selector_card.dart';
-import 'package:alergeni/presentation/widgets/today_snapshot_card.dart';
-import 'package:alergeni/presentation/widgets/top_allergens_card.dart';
-import 'package:alergeni/presentation/widgets/weekly_summary_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:udahni/core/helpers/severity_helper.dart';
+import 'package:udahni/presentation/viewmodels/home_view_model.dart';
+import 'package:udahni/presentation/widgets/empty_state.dart';
+import 'package:udahni/presentation/widgets/error_state.dart';
+import 'package:udahni/presentation/widgets/loading_state.dart';
+import 'package:udahni/presentation/widgets/location_selector_card.dart';
+import 'package:udahni/presentation/widgets/today_snapshot_card.dart';
+import 'package:udahni/presentation/widgets/top_allergens_card.dart';
+import 'package:udahni/presentation/widgets/weekly_summary_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

@@ -1,5 +1,5 @@
-import 'package:alergeni/presentation/widgets/loading_state.dart';
 import 'package:flutter/material.dart';
+import 'package:udahni/presentation/widgets/loading_state.dart';
 
 /// Data for a single row in the top allergens list.
 class TopAllergenItem {

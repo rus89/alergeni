@@ -1,6 +1,6 @@
-import 'package:alergeni/core/theme/app_theme.dart';
-import 'package:alergeni/data/models/allergen.dart';
 import 'package:flutter/material.dart';
+import 'package:udahni/core/theme/app_theme.dart';
+import 'package:udahni/data/models/allergen.dart';
 
 class AllergenCard extends StatelessWidget {
   final Allergen allergen;

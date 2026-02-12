@@ -1,4 +1,4 @@
-package com.example.alergeni
+package com.serbiaOpenData.udahni
 
 import io.flutter.embedding.android.FlutterActivity
 

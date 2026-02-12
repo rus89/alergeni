@@ -1,10 +1,10 @@
-import 'package:alergeni/core/theme/app_theme.dart';
-import 'package:alergeni/data/repositories/pollen_repository.dart';
-import 'package:alergeni/presentation/screens/main_screen.dart';
-import 'package:alergeni/presentation/viewmodels/home_view_model.dart';
-import 'package:alergeni/presentation/viewmodels/map_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:udahni/core/theme/app_theme.dart';
+import 'package:udahni/data/repositories/pollen_repository.dart';
+import 'package:udahni/presentation/screens/main_screen.dart';
+import 'package:udahni/presentation/viewmodels/home_view_model.dart';
+import 'package:udahni/presentation/viewmodels/map_view_model.dart';
 
 //--------------------------------------------------------------------------
 void main() {
