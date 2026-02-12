@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:alergeni/core/constants/severity_thresholds.dart';
 import 'package:alergeni/data/models/allergen.dart';
 import 'package:alergeni/data/models/allergen_types.dart';
@@ -9,9 +11,11 @@ import 'package:alergeni/data/models/site.dart';
 import 'package:alergeni/data/repositories/pollen_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeViewModel extends ChangeNotifier {
   final PollenRepository _pollenRepository;
+  static const String _selectedLocationIdKey = 'selected_location_id';
 
   List<Locations>? _locations;
   String? _errorMessage;
@@ -94,16 +98,22 @@ class HomeViewModel extends ChangeNotifier {
       notifyListeners();
 
       final locations = await _pollenRepository.fetchLocations();
-      final previousSelectedId = _selectedLocation?.id;
+      int? preferredLocationId = _selectedLocation?.id;
+      preferredLocationId ??= await _readSavedLocationId();
 
       _locations = locations;
       if (locations.isEmpty) {
         _selectedLocation = null;
-      } else if (previousSelectedId == null) {
+      } else if (preferredLocationId == null) {
         _selectedLocation = locations.first;
       } else {
         _selectedLocation =
-            _findLocationById(locations, previousSelectedId) ?? locations.first;
+            _findLocationById(locations, preferredLocationId) ??
+            locations.first;
+      }
+
+      if (_selectedLocation != null) {
+        unawaited(_saveSelectedLocationId(_selectedLocation!.id));
       }
       _isLoadingLocations = false;
       notifyListeners();
@@ -344,6 +354,7 @@ class HomeViewModel extends ChangeNotifier {
   //--------------------------------------------------------------------------
   void selectLocation(Locations location) {
     _selectedLocation = location;
+    unawaited(_saveSelectedLocationId(location.id));
     fetchPollenData();
   }
 
@@ -360,6 +371,26 @@ class HomeViewModel extends ChangeNotifier {
       }
     }
     return null;
+  }
+
+  //--------------------------------------------------------------------------
+  Future<void> _saveSelectedLocationId(int locationId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_selectedLocationIdKey, locationId);
+    } catch (_) {
+      // Persistence failure should not block core app flow.
+    }
+  }
+
+  //--------------------------------------------------------------------------
+  Future<int?> _readSavedLocationId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getInt(_selectedLocationIdKey);
+    } catch (_) {
+      return null;
+    }
   }
 
   //--------------------------------------------------------------------------
@@ -505,6 +536,7 @@ class HomeViewModel extends ChangeNotifier {
       }
 
       _selectedLocation = nearestLocation;
+      await _saveSelectedLocationId(nearestLocation.id);
       await fetchPollenData();
       return nearestLocation;
     } finally {
