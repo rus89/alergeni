@@ -143,15 +143,29 @@ class PollenRepository {
       return ids.map((id) => _concentrationCache[id]!).toList();
     }
 
-    // Fetch only missing IDs, then merge with cache
-    final futures = notCached.map((id) => fetchConcentrationById(id));
-    final newConcs = await Future.wait(futures);
+    // Fetch only missing IDs, then merge with cache.
+    final uniqueNotCached = _uniqueIds(notCached);
+    final newConcs = await _apiService.fetchConcentrationsByIds(
+      uniqueNotCached,
+    );
 
-    for (var c in newConcs) {
+    for (final c in newConcs) {
       _concentrationCache[c.id] = c;
     }
 
     return ids.map((id) => _concentrationCache[id]!).toList();
+  }
+
+  //--------------------------------------------------------------------------
+  List<int> _uniqueIds(List<int> ids) {
+    final seen = <int>{};
+    final result = <int>[];
+    for (final id in ids) {
+      if (seen.add(id)) {
+        result.add(id);
+      }
+    }
+    return result;
   }
 
   //--------------------------------------------------------------------------
