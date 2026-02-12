@@ -46,10 +46,12 @@ class Allergen {
   }
 
   String get allergenicityDisplayLocalized {
-    return switch (allergenicityDisplay) {
-      'mild' => 'Slab',
-      'moderate' => 'Srednji',
-      'severe' => 'Jak',
+    final normalized = allergenicityDisplay.trim().toLowerCase();
+
+    return switch (normalized) {
+      'mild' || 'low' || 'slab' || 'nizak' => 'Nizak',
+      'moderate' || 'medium' || 'umeren' || 'srednji' || 'srednja' => 'Srednji',
+      'severe' || 'high' || 'jak' || 'visok' || 'visoka' => 'Visok',
       _ => allergenicityDisplay,
     };
   }
