@@ -20,7 +20,10 @@ class HomeViewModel extends ChangeNotifier {
   static const String _selectedLocationIdKey = 'selected_location_id';
 
   List<Locations>? _locations;
-  String? _errorMessage;
+  String? _locationsError;
+  String? _allergensError;
+  String? _allergenTypesError;
+  String? _pollenDataError;
   Locations? _selectedLocation;
   List<Allergen>? _allergens;
   List<AllergenTypes>? _allergenTypes;
@@ -52,7 +55,8 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   //--------------------------------------------------------------------------
-  String? get errorMessage => _errorMessage;
+  String? get errorMessage =>
+      _locationsError ?? _allergensError ?? _allergenTypesError ?? _pollenDataError;
   int get lowCount => _lowCount;
   int get mediumCount => _mediumCount;
   int get highCount => _highCount;
@@ -96,7 +100,7 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> fetchLocations() async {
     try {
       _isLoadingLocations = true;
-      _errorMessage = null;
+      _locationsError = null;
       notifyListeners();
 
       final locations = await _pollenRepository.fetchLocations();
@@ -120,7 +124,7 @@ class HomeViewModel extends ChangeNotifier {
       _isLoadingLocations = false;
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      _locationsError = e.toString();
       _isLoadingLocations = false;
       notifyListeners();
     }
@@ -130,7 +134,7 @@ class HomeViewModel extends ChangeNotifier {
   Future<List<Allergen>> fetchAllergens() async {
     try {
       _isLoadingAllergens = true;
-      _errorMessage = null;
+      _allergensError = null;
       notifyListeners();
 
       final allergens = await _pollenRepository.fetchAllergens();
@@ -140,7 +144,7 @@ class HomeViewModel extends ChangeNotifier {
       notifyListeners();
       return allergens;
     } catch (e) {
-      _errorMessage = e.toString();
+      _allergensError = e.toString();
       _isLoadingAllergens = false;
       notifyListeners();
       return _allergens ?? [];
@@ -151,7 +155,7 @@ class HomeViewModel extends ChangeNotifier {
   Future<void> fetchAllergenTypes() async {
     try {
       _isLoadingAllergenTypes = true;
-      _errorMessage = null;
+      _allergenTypesError = null;
       notifyListeners();
 
       final allergenTypes = await _pollenRepository.fetchAllergenTypes();
@@ -160,7 +164,7 @@ class HomeViewModel extends ChangeNotifier {
       _isLoadingAllergenTypes = false;
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      _allergenTypesError = e.toString();
       _isLoadingAllergenTypes = false;
       notifyListeners();
     }
@@ -213,7 +217,7 @@ class HomeViewModel extends ChangeNotifier {
 
     try {
       _isLoadingPollenData = true;
-      _errorMessage = null;
+      _pollenDataError = null;
       notifyListeners();
 
       await Future.wait([fetchPollenConcentrationData(), fetchSiteData()]);
@@ -221,7 +225,7 @@ class HomeViewModel extends ChangeNotifier {
       _isLoadingPollenData = false;
       notifyListeners();
     } catch (e) {
-      _errorMessage = e.toString();
+      _pollenDataError = e.toString();
       _isLoadingPollenData = false;
       notifyListeners();
     }

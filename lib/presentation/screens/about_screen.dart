@@ -5,6 +5,7 @@ import 'package:udahni/core/helpers/severity_helper.dart';
 import 'package:udahni/core/theme/app_theme.dart';
 import 'package:udahni/data/models/allergen.dart';
 import 'package:udahni/presentation/viewmodels/home_view_model.dart';
+import 'package:udahni/presentation/widgets/error_state.dart';
 
 //--------------------------------------------------------------------------
 class AboutScreen extends StatefulWidget {
@@ -27,7 +28,12 @@ class _AboutScreenState extends State<AboutScreen> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: allergens == null
-          ? const Center(child: CircularProgressIndicator())
+          ? viewModel.errorMessage != null
+              ? ErrorState(
+                  message: viewModel.errorMessage!,
+                  onRetry: viewModel.fetchAllergens,
+                )
+              : const Center(child: CircularProgressIndicator())
           : _buildBody(context, allergens),
     );
   }
