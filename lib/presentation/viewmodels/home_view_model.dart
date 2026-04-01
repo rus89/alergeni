@@ -11,6 +11,8 @@ import 'package:udahni/data/models/locations.dart';
 import 'package:udahni/data/models/paginated_response.dart';
 import 'package:udahni/data/models/pollens.dart';
 import 'package:udahni/data/models/site.dart';
+import 'package:udahni/core/helpers/level_helper.dart';
+import 'package:udahni/core/helpers/severity_helper.dart';
 import 'package:udahni/data/repositories/pollen_repository.dart';
 
 class HomeViewModel extends ChangeNotifier {
@@ -138,11 +140,10 @@ class HomeViewModel extends ChangeNotifier {
       notifyListeners();
       return allergens;
     } catch (e) {
-      _allergens = null;
       _errorMessage = e.toString();
       _isLoadingAllergens = false;
       notifyListeners();
-      return [];
+      return _allergens ?? [];
     }
   }
 
@@ -427,25 +428,7 @@ class HomeViewModel extends ChangeNotifier {
         .map((s) => s.level)
         .reduce((a, b) => a > b ? a : b);
 
-    return _levelToLabel(maxLevel);
-  }
-
-  //--------------------------------------------------------------------------
-  String _levelToLabel(int level) {
-    switch (level) {
-      case 1:
-        return 'Vrlo niska';
-      case 2:
-        return 'Niska';
-      case 3:
-        return 'Srednja';
-      case 4:
-        return 'Visoka';
-      case 5:
-        return 'Vrlo visoka';
-      default:
-        return 'Nepoznato';
-    }
+    return LevelHelper.levelToLabel(maxLevel);
   }
 
   //--------------------------------------------------------------------------
@@ -456,20 +439,62 @@ class HomeViewModel extends ChangeNotifier {
         .map((s) => s.level)
         .reduce((a, b) => a > b ? a : b);
 
-    switch (maxLevel) {
-      case 1:
-        return Colors.lightGreen;
-      case 2:
-        return Colors.green;
-      case 3:
-        return Colors.orange;
-      case 4:
-        return Colors.redAccent;
-      case 5:
-        return Colors.red;
-      default:
-        return Colors.grey;
+    return LevelHelper.levelToColor(maxLevel);
+  }
+
+  //--------------------------------------------------------------------------
+  Map<int, TypeSeverityData> get typeDataMap {
+    final result = <int, TypeSeverityData>{};
+
+    if (_allergens == null || _concentrations == null) return result;
+
+    for (var typeId in [1, 2, 3]) {
+      final allergensForType = <AllergenWithConcentration>[];
+
+      for (var conc in _concentrations!) {
+        if (conc.value == 0) continue;
+
+        final allergen = _allergens!.cast<Allergen?>().firstWhere(
+          (a) => a!.id == conc.allergenId,
+          orElse: () => null,
+        );
+        if (allergen != null && allergen.type == typeId) {
+          allergensForType.add(
+            AllergenWithConcentration(allergen, conc.value),
+          );
+        }
+      }
+
+      if (allergensForType.isEmpty) {
+        result[typeId] = const TypeSeverityData(
+          severity: 'Nema',
+          color: Colors.grey,
+          allergenicityLabel: '',
+        );
+      } else {
+        allergensForType.sort((a, b) {
+          final dangerA = a.concentration * a.allergen.allergenicityIndex;
+          final dangerB = b.concentration * b.allergen.allergenicityIndex;
+          return dangerB.compareTo(dangerA);
+        });
+
+        final mostDangerous = allergensForType.first;
+        result[typeId] = TypeSeverityData(
+          severity: SeverityHelper.concentrationLabel(
+            mostDangerous.concentration,
+          ),
+          color: SeverityHelper.allergenicityColorForConcentration(
+            allergenicityIndex: mostDangerous.allergen.allergenicityIndex,
+            concentration: mostDangerous.concentration,
+          ),
+          allergenicityLabel: SeverityHelper.allergenicityLabel(
+            mostDangerous.allergen.allergenicityIndex,
+          ),
+        );
+      }
     }
+
+    return result;
   }
 
   //--------------------------------------------------------------------------
@@ -558,4 +583,16 @@ class AllergenWithConcentration {
   final int concentration;
 
   AllergenWithConcentration(this.allergen, this.concentration);
+}
+
+class TypeSeverityData {
+  final String severity;
+  final Color color;
+  final String allergenicityLabel;
+
+  const TypeSeverityData({
+    required this.severity,
+    required this.color,
+    required this.allergenicityLabel,
+  });
 }

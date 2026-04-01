@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:udahni/core/helpers/level_helper.dart';
 import 'package:udahni/data/models/locations.dart';
 import 'package:udahni/data/models/site.dart';
 import 'package:udahni/data/repositories/pollen_repository.dart';
@@ -74,7 +75,7 @@ class MapViewModel extends ChangeNotifier {
 
   //--------------------------------------------------------------------------
   Color getPinColorForTrendValue(int? trend) {
-    return _trendToPinColor(trend);
+    return LevelHelper.trendToPinColor(trend);
   }
 
   //--------------------------------------------------------------------------
@@ -90,12 +91,12 @@ class MapViewModel extends ChangeNotifier {
 
     return MapLocationSummary(
       hasData: true,
-      riskLabel: _levelToLabel(maxLevel),
-      riskColor: _levelToColor(maxLevel),
-      trendLabel: _trendToLabel(trend),
-      trendIcon: _trendToIcon(trend),
+      riskLabel: LevelHelper.levelToLabel(maxLevel),
+      riskColor: LevelHelper.levelToColor(maxLevel),
+      trendLabel: LevelHelper.trendToLabel(trend),
+      trendIcon: LevelHelper.trendToIcon(trend),
       trendValue: trend,
-      pinColor: _trendToPinColor(trend),
+      pinColor: LevelHelper.trendToPinColor(trend),
       week: sites.first.week,
     );
   }
@@ -127,10 +128,10 @@ class MapViewModel extends ChangeNotifier {
       hasData: false,
       riskLabel: 'Nema podataka',
       riskColor: Colors.grey,
-      trendLabel: 'Trend nije dostupan',
-      trendIcon: Icons.help_outline,
+      trendLabel: LevelHelper.trendToLabel(null),
+      trendIcon: LevelHelper.trendToIcon(null),
       trendValue: null,
-      pinColor: _trendToPinColor(null),
+      pinColor: LevelHelper.trendToPinColor(null),
       week: null,
     );
   }
@@ -154,83 +155,6 @@ class MapViewModel extends ChangeNotifier {
         .key;
   }
 
-  //--------------------------------------------------------------------------
-  String _levelToLabel(int level) {
-    switch (level) {
-      case 1:
-        return 'Vrlo niska';
-      case 2:
-        return 'Niska';
-      case 3:
-        return 'Srednja';
-      case 4:
-        return 'Visoka';
-      case 5:
-        return 'Vrlo visoka';
-      default:
-        return 'Nepoznato';
-    }
-  }
-
-  //--------------------------------------------------------------------------
-  Color _levelToColor(int level) {
-    switch (level) {
-      case 1:
-        return Colors.lightGreen;
-      case 2:
-        return Colors.green;
-      case 3:
-        return Colors.orange;
-      case 4:
-        return Colors.redAccent;
-      case 5:
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  //--------------------------------------------------------------------------
-  String _trendToLabel(int? trend) {
-    switch (trend) {
-      case 1:
-        return 'Opadajući trend';
-      case 2:
-        return 'Stabilan trend';
-      case 3:
-        return 'Rastući trend';
-      default:
-        return 'Trend nije dostupan';
-    }
-  }
-
-  //--------------------------------------------------------------------------
-  IconData _trendToIcon(int? trend) {
-    switch (trend) {
-      case 1:
-        return Icons.trending_down;
-      case 2:
-        return Icons.trending_flat;
-      case 3:
-        return Icons.trending_up;
-      default:
-        return Icons.help_outline;
-    }
-  }
-
-  //--------------------------------------------------------------------------
-  Color _trendToPinColor(int? trend) {
-    switch (trend) {
-      case 1:
-        return Colors.green;
-      case 2:
-        return Colors.orange;
-      case 3:
-        return Colors.red;
-      default:
-        return Colors.grey.shade600;
-    }
-  }
 }
 
 class MapLocationSummary {

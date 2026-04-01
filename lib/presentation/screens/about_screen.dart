@@ -16,22 +16,11 @@ class AboutScreen extends StatefulWidget {
 
 //--------------------------------------------------------------------------
 class _AboutScreenState extends State<AboutScreen> {
-  Future<List<Allergen>>? _allergensFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      setState(() {
-        _allergensFuture = context.read<HomeViewModel>().fetchAllergens();
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final allergens = _allergensFuture;
+    final viewModel = context.watch<HomeViewModel>();
+    final allergens = viewModel.allergens;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('O aplikaciji'),
@@ -44,7 +33,7 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   //--------------------------------------------------------------------------
-  Widget _buildBody(BuildContext context, Future<List<Allergen>> allergens) {
+  Widget _buildBody(BuildContext context, List<Allergen> allergens) {
     final mutedTextColor = Theme.of(context).colorScheme.onSurfaceVariant;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -144,45 +133,25 @@ class _AboutScreenState extends State<AboutScreen> {
   //--------------------------------------------------------------------------
   Widget _buildAllergensTable(
     BuildContext context,
-    Future<List<Allergen>> allergens,
+    List<Allergen> allergens,
   ) {
-    return FutureBuilder<List<Allergen>>(
-      future: allergens,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+    if (allergens.isEmpty) {
+      return const Center(child: Text('Nema dostupnih alergena'));
+    }
+
+    final groupedAllergens = _groupAllergensByType(allergens);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 700;
+        if (isCompact) {
+          return _buildCompactAllergensList(context, groupedAllergens);
         }
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              'Greška pri učitavanju alergena: ${snapshot.error}',
-              textAlign: TextAlign.center,
-            ),
-          );
-        }
-
-        final allergens = snapshot.data ?? [];
-
-        if (allergens.isEmpty) {
-          return const Center(child: Text('Nema dostupnih alergena'));
-        }
-
-        final groupedAllergens = _groupAllergensByType(allergens);
-
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final isCompact = constraints.maxWidth < 700;
-            if (isCompact) {
-              return _buildCompactAllergensList(context, groupedAllergens);
-            }
-
-            return _buildWideAllergensTable(
-              context,
-              groupedAllergens,
-              constraints.maxWidth,
-            );
-          },
+        return _buildWideAllergensTable(
+          context,
+          groupedAllergens,
+          constraints.maxWidth,
         );
       },
     );

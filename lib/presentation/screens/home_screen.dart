@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:udahni/core/helpers/level_helper.dart';
 import 'package:udahni/core/helpers/severity_helper.dart';
 import 'package:udahni/presentation/viewmodels/home_view_model.dart';
 import 'package:udahni/presentation/widgets/empty_state.dart';
@@ -197,22 +198,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<SnapshotColumnItem> _buildSnapshotItems(HomeViewModel viewModel) {
-    final typeData = _getTypeData(viewModel);
+    final typeData = viewModel.typeDataMap;
     return [
       SnapshotColumnItem(
         icon: Icons.park,
         label: 'Drveće',
-        color: typeData[1]?['color'] ?? Colors.grey,
+        color: typeData[1]?.color ?? Colors.grey,
       ),
       SnapshotColumnItem(
         icon: Icons.grass,
         label: 'Trave',
-        color: typeData[2]?['color'] ?? Colors.grey,
+        color: typeData[2]?.color ?? Colors.grey,
       ),
       SnapshotColumnItem(
         icon: Icons.eco,
         label: 'Korovi',
-        color: typeData[3]?['color'] ?? Colors.grey,
+        color: typeData[3]?.color ?? Colors.grey,
       ),
     ];
   }
@@ -264,7 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       final severityLabel = SeverityHelper.concentrationLabel(conc.value);
       final trend = trendMap[allergen.id];
-      final trendIcon = _getTrendIcon(trend);
+      final trendIcon = trend != null ? LevelHelper.trendToIcon(trend) : null;
 
       return TopAllergenItem(
         index: index,
@@ -285,78 +286,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ====== HELPER METHODS ======
-  Map<int, Map<String, dynamic>> _getTypeData(HomeViewModel viewModel) {
-    final result = <int, Map<String, dynamic>>{};
-
-    if (viewModel.allergens == null || viewModel.concentrations == null) {
-      return result;
-    }
-
-    for (var typeId in [1, 2, 3]) {
-      final allergensForType = <AllergenWithConcentration>[];
-
-      for (var conc in viewModel.concentrations!) {
-        if (conc.value == 0) continue;
-
-        try {
-          final allergen = viewModel.allergens!.firstWhere(
-            (a) => a.id == conc.allergenId,
-          );
-          if (allergen.type == typeId) {
-            allergensForType.add(
-              AllergenWithConcentration(allergen, conc.value),
-            );
-          }
-        } catch (e) {
-          continue;
-        }
-      }
-
-      if (allergensForType.isEmpty) {
-        result[typeId] = {
-          'severity': 'Nema',
-          'color': Colors.grey,
-          'allergenicityLabel': '',
-        };
-      } else {
-        allergensForType.sort((a, b) {
-          final dangerA = a.concentration * a.allergen.allergenicityIndex;
-          final dangerB = b.concentration * b.allergen.allergenicityIndex;
-          return dangerB.compareTo(dangerA);
-        });
-
-        final mostDangerous = allergensForType.first;
-        result[typeId] = {
-          'severity': SeverityHelper.concentrationLabel(
-            mostDangerous.concentration,
-          ),
-          'color': SeverityHelper.allergenicityColorForConcentration(
-            allergenicityIndex: mostDangerous.allergen.allergenicityIndex,
-            concentration: mostDangerous.concentration,
-          ),
-          'allergenicityLabel': SeverityHelper.allergenicityLabel(
-            mostDangerous.allergen.allergenicityIndex,
-          ),
-        };
-      }
-    }
-
-    return result;
-  }
-
-  IconData? _getTrendIcon(int? trend) {
-    if (trend == null) return null;
-
-    switch (trend) {
-      case 1:
-        return Icons.trending_down; // Declining
-      case 2:
-        return Icons.trending_flat; // Stable
-      case 3:
-        return Icons.trending_up; // Rising
-      default:
-        return null;
-    }
-  }
 }
