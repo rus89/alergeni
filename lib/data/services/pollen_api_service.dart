@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 import 'package:udahni/core/config/api_config.dart';
+import 'package:udahni/core/errors/app_error.dart';
 import 'package:udahni/data/models/allergen.dart';
 import 'package:udahni/data/models/allergen_types.dart';
 import 'package:udahni/data/models/concentrations.dart';
@@ -49,19 +50,19 @@ class PollenApiService {
 
         return response;
       } on TimeoutException {
-        if (attempt >= maxRetries) rethrow;
+        if (attempt >= maxRetries) throw AppError.fromException(TimeoutException('Request to $uri timed out'));
         await Future.delayed(_retryDelay(attempt));
-      } on SocketException {
-        if (attempt >= maxRetries) rethrow;
+      } on SocketException catch (e) {
+        if (attempt >= maxRetries) throw AppError.fromException(e);
         await Future.delayed(_retryDelay(attempt));
-      } on http.ClientException {
-        if (attempt >= maxRetries) rethrow;
+      } on http.ClientException catch (e) {
+        if (attempt >= maxRetries) throw AppError.fromException(e);
         await Future.delayed(_retryDelay(attempt));
       }
     }
 
-    throw Exception(
-      'Request failed after ${ApiConfig.maxRetries + 1} attempts',
+    throw const UnexpectedError(
+      debugMessage: 'Request failed after all retry attempts',
     );
   }
 
@@ -88,19 +89,7 @@ class PollenApiService {
       return parser(decoded);
     }
 
-    final payloadSnippet = response.body.length > 200
-        ? '${response.body.substring(0, 200)}…'
-        : response.body;
-
-    final message = response.statusCode >= 500
-        ? 'Server error'
-        : response.statusCode >= 400
-        ? 'Client error'
-        : 'Unexpected status';
-
-    throw Exception(
-      '$message ${response.statusCode} (${response.reasonPhrase ?? 'no reason'}) – $payloadSnippet',
-    );
+    throw AppError.fromHttpStatus(response.statusCode);
   }
 
   //--------------------------------------------------------------------------
