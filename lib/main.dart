@@ -1,3 +1,6 @@
+// ABOUTME: App entry point with provider setup and theme configuration.
+// ABOUTME: Registers repositories and view models, then launches the main screen.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:udahni/core/theme/app_theme.dart';

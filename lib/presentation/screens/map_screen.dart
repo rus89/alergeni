@@ -1,3 +1,6 @@
+// ABOUTME: Interactive map of Serbia's pollen monitoring stations.
+// ABOUTME: Displays color-coded markers with trend and risk info per location.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';

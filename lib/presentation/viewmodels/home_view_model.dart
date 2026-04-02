@@ -1,3 +1,6 @@
+// ABOUTME: Manages home screen state including locations, allergens, concentrations, and severity.
+// ABOUTME: Coordinates data loading, location selection, and pollen data aggregation.
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';

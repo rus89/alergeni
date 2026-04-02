@@ -1,3 +1,6 @@
+// ABOUTME: Card showing top 5 allergens ranked by concentration with trend indicators.
+// ABOUTME: Highlights personal allergens and displays severity color bars.
+
 import 'package:flutter/material.dart';
 import 'package:udahni/presentation/widgets/loading_state.dart';
 

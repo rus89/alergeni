@@ -1,3 +1,6 @@
+// ABOUTME: Manages map screen state with location markers and risk summaries.
+// ABOUTME: Prefetches and caches per-location pollen severity for map pin coloring.
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -12,12 +15,12 @@ class MapViewModel extends ChangeNotifier {
 
   List<Locations>? _locations;
   bool _isLoading = true;
-  AppError? _errorMessage;
+  AppError? _error;
   final Map<int, MapLocationSummary> _locationSummaryCache = {};
 
   List<Locations>? get locations => _locations;
   bool get isLoading => _isLoading;
-  AppError? get error => _errorMessage;
+  AppError? get error => _error;
 
   //--------------------------------------------------------------------------
   MapViewModel({required PollenRepository pollenRepository})
@@ -27,7 +30,7 @@ class MapViewModel extends ChangeNotifier {
   Future<void> loadLocations() async {
     try {
       _isLoading = true;
-      _errorMessage = null;
+      _error = null;
       _locationSummaryCache.clear();
       notifyListeners();
 
@@ -38,7 +41,7 @@ class MapViewModel extends ChangeNotifier {
       notifyListeners();
       unawaited(_prefetchLocationSummaries(locations));
     } catch (e) {
-      _errorMessage = e is AppError ? e : AppError.fromException(e);
+      _error = e is AppError ? e : AppError.fromException(e);
       _isLoading = false;
       notifyListeners();
     }

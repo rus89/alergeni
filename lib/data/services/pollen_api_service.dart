@@ -1,3 +1,6 @@
+// ABOUTME: HTTP client for Serbia's pollen open data API with retry logic.
+// ABOUTME: Handles request formatting, response parsing, and transient error recovery.
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';

@@ -1,9 +1,13 @@
+// ABOUTME: Main screen showing pollen data with location selector, summary, and allergen cards.
+// ABOUTME: Handles first-run experience, off-season dialogs, and nearest-location detection.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:udahni/core/helpers/level_helper.dart';
 import 'package:udahni/core/helpers/severity_helper.dart';
 import 'package:udahni/presentation/screens/personal_allergen_screen.dart';
+import 'package:udahni/core/errors/app_error.dart';
 import 'package:udahni/presentation/viewmodels/home_view_model.dart';
 import 'package:udahni/presentation/viewmodels/personal_allergen_view_model.dart';
 import 'package:udahni/presentation/widgets/empty_state.dart';
@@ -177,7 +181,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          error.toString().replaceFirst('Exception: ', ''),
+                          error is AppError
+                              ? error.userMessage
+                              : error.toString().replaceFirst('Exception: ', ''),
                         ),
                       ),
                     );

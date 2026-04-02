@@ -8,7 +8,6 @@ sealed class AppError {
   const AppError();
 
   String get userMessage;
-  String get iconName;
 
   factory AppError.fromException(Object exception) {
     if (exception is SocketException || exception is TimeoutException) {
@@ -34,9 +33,6 @@ class NoInternetError extends AppError {
   @override
   String get userMessage =>
       'Nema internet konekcije. Proverite vezu i pokušajte ponovo.';
-
-  @override
-  String get iconName => 'wifi_off';
 }
 
 class ServerError extends AppError {
@@ -45,9 +41,6 @@ class ServerError extends AppError {
   @override
   String get userMessage =>
       'Podaci trenutno nisu dostupni. Pokušajte ponovo malo kasnije.';
-
-  @override
-  String get iconName => 'cloud_off';
 }
 
 class NotFoundError extends AppError {
@@ -55,9 +48,6 @@ class NotFoundError extends AppError {
 
   @override
   String get userMessage => 'Podaci za ovu lokaciju nisu pronađeni.';
-
-  @override
-  String get iconName => 'search_off';
 }
 
 class UnexpectedError extends AppError {
@@ -67,7 +57,4 @@ class UnexpectedError extends AppError {
 
   @override
   String get userMessage => 'Došlo je do greške. Pokušajte ponovo.';
-
-  @override
-  String get iconName => 'error_outline';
 }
