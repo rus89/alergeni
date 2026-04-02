@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:udahni/core/helpers/level_helper.dart';
 import 'package:udahni/data/models/locations.dart';
 import 'package:udahni/data/models/site.dart';
+import 'package:udahni/core/errors/app_error.dart';
 import 'package:udahni/data/repositories/pollen_repository.dart';
 
 class MapViewModel extends ChangeNotifier {
@@ -11,12 +12,12 @@ class MapViewModel extends ChangeNotifier {
 
   List<Locations>? _locations;
   bool _isLoading = true;
-  String? _errorMessage;
+  AppError? _errorMessage;
   final Map<int, MapLocationSummary> _locationSummaryCache = {};
 
   List<Locations>? get locations => _locations;
   bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
+  AppError? get error => _errorMessage;
 
   //--------------------------------------------------------------------------
   MapViewModel({required PollenRepository pollenRepository})
@@ -37,7 +38,7 @@ class MapViewModel extends ChangeNotifier {
       notifyListeners();
       unawaited(_prefetchLocationSummaries(locations));
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = e is AppError ? e : AppError.fromException(e);
       _isLoading = false;
       notifyListeners();
     }

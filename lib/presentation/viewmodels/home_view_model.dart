@@ -13,6 +13,7 @@ import 'package:udahni/data/models/pollens.dart';
 import 'package:udahni/data/models/site.dart';
 import 'package:udahni/core/helpers/level_helper.dart';
 import 'package:udahni/core/helpers/severity_helper.dart';
+import 'package:udahni/core/errors/app_error.dart';
 import 'package:udahni/data/repositories/pollen_repository.dart';
 
 class HomeViewModel extends ChangeNotifier {
@@ -20,10 +21,10 @@ class HomeViewModel extends ChangeNotifier {
   static const String _selectedLocationIdKey = 'selected_location_id';
 
   List<Locations>? _locations;
-  String? _locationsError;
-  String? _allergensError;
-  String? _allergenTypesError;
-  String? _pollenDataError;
+  AppError? _locationsError;
+  AppError? _allergensError;
+  AppError? _allergenTypesError;
+  AppError? _pollenDataError;
   Locations? _selectedLocation;
   List<Allergen>? _allergens;
   List<AllergenTypes>? _allergenTypes;
@@ -55,7 +56,7 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   //--------------------------------------------------------------------------
-  String? get errorMessage =>
+  AppError? get error =>
       _locationsError ?? _allergensError ?? _allergenTypesError ?? _pollenDataError;
   int get lowCount => _lowCount;
   int get mediumCount => _mediumCount;
@@ -124,7 +125,7 @@ class HomeViewModel extends ChangeNotifier {
       _isLoadingLocations = false;
       notifyListeners();
     } catch (e) {
-      _locationsError = e.toString();
+      _locationsError = e is AppError ? e : AppError.fromException(e);
       _isLoadingLocations = false;
       notifyListeners();
     }
@@ -144,7 +145,7 @@ class HomeViewModel extends ChangeNotifier {
       notifyListeners();
       return allergens;
     } catch (e) {
-      _allergensError = e.toString();
+      _allergensError = e is AppError ? e : AppError.fromException(e);
       _isLoadingAllergens = false;
       notifyListeners();
       return _allergens ?? [];
@@ -164,7 +165,7 @@ class HomeViewModel extends ChangeNotifier {
       _isLoadingAllergenTypes = false;
       notifyListeners();
     } catch (e) {
-      _allergenTypesError = e.toString();
+      _allergenTypesError = e is AppError ? e : AppError.fromException(e);
       _isLoadingAllergenTypes = false;
       notifyListeners();
     }
@@ -225,7 +226,7 @@ class HomeViewModel extends ChangeNotifier {
       _isLoadingPollenData = false;
       notifyListeners();
     } catch (e) {
-      _pollenDataError = e.toString();
+      _pollenDataError = e is AppError ? e : AppError.fromException(e);
       _isLoadingPollenData = false;
       notifyListeners();
     }
