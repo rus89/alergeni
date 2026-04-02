@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:udahni/core/helpers/level_helper.dart';
 import 'package:udahni/core/helpers/severity_helper.dart';
+import 'package:udahni/presentation/screens/personal_allergen_screen.dart';
 import 'package:udahni/presentation/viewmodels/home_view_model.dart';
+import 'package:udahni/presentation/viewmodels/personal_allergen_view_model.dart';
 import 'package:udahni/presentation/widgets/empty_state.dart';
 import 'package:udahni/presentation/widgets/error_state.dart';
 import 'package:udahni/presentation/widgets/loading_state.dart';
@@ -63,6 +65,19 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Početna'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            tooltip: 'Moji alergeni',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const PersonalAllergenScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: _buildBody(context, context.watch<HomeViewModel>()),
     );
@@ -151,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             if (viewModel.concentrations != null &&
                 viewModel.concentrations!.isNotEmpty) ...[
-              _buildTopAllergensSection(context, viewModel),
+              _buildTopAllergensSection(context, viewModel, context.watch<PersonalAllergenViewModel>().selectedAllergenIds),
               const SizedBox(height: _sectionSpacing),
             ],
           ],
@@ -221,6 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTopAllergensSection(
     BuildContext context,
     HomeViewModel viewModel,
+    Set<int> personalAllergenIds,
   ) {
     if (viewModel.isLoadingPollenData) {
       return const TopAllergensCardLoading();
@@ -275,6 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
         value: conc.value,
         severityLabel: severityLabel,
         trendIcon: trendIcon,
+        isPersonal: personalAllergenIds.contains(allergen.id),
       );
     }).toList();
 

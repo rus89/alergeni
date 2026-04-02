@@ -11,6 +11,7 @@ class TopAllergenItem {
     required this.value,
     required this.severityLabel,
     this.trendIcon,
+    this.isPersonal = false,
   });
 
   final int index;
@@ -20,6 +21,7 @@ class TopAllergenItem {
   final int value;
   final String severityLabel;
   final IconData? trendIcon;
+  final bool isPersonal;
 }
 
 /// Presentational card showing top 5 allergens with concentration and optional trend.
@@ -130,8 +132,18 @@ class _TopAllergenRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(8),
+      decoration: item.isPersonal
+          ? BoxDecoration(
+              color: item.color.withAlpha(20),
+              borderRadius: BorderRadius.circular(8),
+              border: Border(
+                left: BorderSide(color: item.color, width: 3),
+              ),
+            )
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -141,6 +153,10 @@ class _TopAllergenRow extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
+                    if (item.isPersonal) ...[
+                      Icon(Icons.person, size: 14, color: item.color),
+                      const SizedBox(width: 4),
+                    ],
                     Text(
                       '${item.index}. ${item.name}',
                       style: const TextStyle(
