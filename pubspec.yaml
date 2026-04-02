@@ -1,7 +1,7 @@
 name: udahni
 description: "Pollen and Allergen data for Serbia"
 publish_to: "none"
-version: 1.0.0+2
+version: 1.1.0+3
 
 environment:
   sdk: ^3.10.7
