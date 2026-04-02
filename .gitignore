@@ -48,3 +48,9 @@ app.*.map.json
 /android/key.properties
 *.jks
 *.keystore
+.claude/settings.json
+.claude/settings.local.json
+.claude/hooks/block-dangerous-commands.js
+.claude/hooks/protect-files.sh
+.claude/hooks/protect-secrets.js
+.claude/hooks/session_start.sh
