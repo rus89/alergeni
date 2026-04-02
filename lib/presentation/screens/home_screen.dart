@@ -73,10 +73,10 @@ class _HomeScreenState extends State<HomeScreen> {
       return const LoadingState();
     }
 
-    if (viewModel.errorMessage != null) {
+    if (viewModel.error != null) {
       return ErrorState(
-        message: viewModel.errorMessage!,
-        onRetry: viewModel.fetchLocations,
+        error: viewModel.error!,
+        onRetry: viewModel.loadInitialData,
       );
     }
 

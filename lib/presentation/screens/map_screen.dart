@@ -25,9 +25,9 @@ class MapScreen extends StatelessWidget {
       ),
       body: mapViewModel.isLoading
           ? const LoadingState()
-          : mapViewModel.errorMessage != null
+          : mapViewModel.error != null
           ? ErrorState(
-              message: mapViewModel.errorMessage!,
+              error: mapViewModel.error!,
               onRetry: mapViewModel.refreshLocations,
             )
           : mapViewModel.locations == null || mapViewModel.locations!.isEmpty

@@ -28,9 +28,9 @@ class _AboutScreenState extends State<AboutScreen> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: allergens == null
-          ? viewModel.errorMessage != null
+          ? viewModel.error != null
               ? ErrorState(
-                  message: viewModel.errorMessage!,
+                  error: viewModel.error!,
                   onRetry: viewModel.fetchAllergens,
                 )
               : const Center(child: CircularProgressIndicator())
