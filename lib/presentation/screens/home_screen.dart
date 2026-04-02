@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:udahni/core/helpers/level_helper.dart';
 import 'package:udahni/core/helpers/severity_helper.dart';
 import 'package:udahni/presentation/screens/personal_allergen_screen.dart';
@@ -7,6 +8,7 @@ import 'package:udahni/presentation/viewmodels/home_view_model.dart';
 import 'package:udahni/presentation/viewmodels/personal_allergen_view_model.dart';
 import 'package:udahni/presentation/widgets/empty_state.dart';
 import 'package:udahni/presentation/widgets/error_state.dart';
+import 'package:udahni/presentation/widgets/first_run_hint.dart';
 import 'package:udahni/presentation/widgets/loading_state.dart';
 import 'package:udahni/presentation/widgets/location_selector_card.dart';
 import 'package:udahni/presentation/widgets/today_snapshot_card.dart';
@@ -22,6 +24,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   static const double _sectionSpacing = 16;
+  static const String _firstLaunchKey = 'first_launch_completed';
+  bool _showHints = false;
+  bool _locationHintDismissed = false;
+  bool _summaryHintDismissed = false;
+  bool _allergensHintDismissed = false;
 
   @override
   void initState() {
@@ -33,7 +40,33 @@ class _HomeScreenState extends State<HomeScreen> {
         _showOffSeasonDialog(context);
         viewModel.hasShownOffSeasonMessage = true;
       }
+      _checkFirstLaunch(viewModel);
     });
+  }
+
+  Future<void> _checkFirstLaunch(HomeViewModel viewModel) async {
+    final prefs = await SharedPreferences.getInstance();
+    final completed = prefs.getBool(_firstLaunchKey) ?? false;
+    if (completed) return;
+
+    await prefs.setBool(_firstLaunchKey, true);
+
+    if (!mounted) return;
+    setState(() => _showHints = true);
+
+    try {
+      final nearestLocation = await viewModel.selectNearestLocationFromDevice();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Izabrana je najbliža lokacija: ${nearestLocation.name}',
+          ),
+        ),
+      );
+    } catch (_) {
+      // Location detection failed — graceful degradation, no error shown.
+    }
   }
 
   void _showOffSeasonDialog(BuildContext context) {
@@ -118,34 +151,39 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LocationSelectorCard(
-              locations: viewModel.locations!,
-              selectedLocation: viewModel.selectedLocation,
-              isMyLocationLoading: viewModel.isLocatingNearestLocation,
-              onLocationChanged: viewModel.selectLocation,
-              onMyLocationPressed: () async {
-                try {
-                  final nearestLocation = await viewModel
-                      .selectNearestLocationFromDevice();
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Izabrana je najbliža lokacija: ${nearestLocation.name}',
+            FirstRunHint(
+              message: 'Promenite stanicu u bilo kom trenutku',
+              visible: _showHints && !_locationHintDismissed,
+              onDismiss: () => setState(() => _locationHintDismissed = true),
+              child: LocationSelectorCard(
+                locations: viewModel.locations!,
+                selectedLocation: viewModel.selectedLocation,
+                isMyLocationLoading: viewModel.isLocatingNearestLocation,
+                onLocationChanged: viewModel.selectLocation,
+                onMyLocationPressed: () async {
+                  try {
+                    final nearestLocation = await viewModel
+                        .selectNearestLocationFromDevice();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Izabrana je najbliža lokacija: ${nearestLocation.name}',
+                        ),
                       ),
-                    ),
-                  );
-                } catch (error) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        error.toString().replaceFirst('Exception: ', ''),
+                    );
+                  } catch (error) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          error.toString().replaceFirst('Exception: ', ''),
+                        ),
                       ),
-                    ),
-                  );
-                }
-              },
+                    );
+                  }
+                },
+              ),
             ),
             const SizedBox(height: _sectionSpacing),
 
@@ -154,7 +192,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         viewModel.concentrations!.isNotEmpty ||
                     viewModel.siteData != null &&
                         viewModel.siteData!.isNotEmpty)) ...[
-              _buildWeeklySummaryCard(context, viewModel),
+              FirstRunHint(
+                message: 'Ukupni nivo polena za vašu oblast ove nedelje',
+                visible: _showHints && !_summaryHintDismissed,
+                onDismiss: () => setState(() => _summaryHintDismissed = true),
+                child: _buildWeeklySummaryCard(context, viewModel),
+              ),
               const SizedBox(height: _sectionSpacing),
             ],
 
@@ -166,7 +209,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
             if (viewModel.concentrations != null &&
                 viewModel.concentrations!.isNotEmpty) ...[
-              _buildTopAllergensSection(context, viewModel, context.watch<PersonalAllergenViewModel>().selectedAllergenIds),
+              FirstRunHint(
+                message: 'Vaši najzastupljeniji alergeni rangirani po koncentraciji',
+                visible: _showHints && !_allergensHintDismissed,
+                onDismiss: () => setState(() => _allergensHintDismissed = true),
+                child: _buildTopAllergensSection(context, viewModel, context.watch<PersonalAllergenViewModel>().selectedAllergenIds),
+              ),
               const SizedBox(height: _sectionSpacing),
             ],
           ],
