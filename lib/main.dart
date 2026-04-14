@@ -3,20 +3,27 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:udahni/core/services/onboarding_service.dart';
 import 'package:udahni/core/theme/app_theme.dart';
 import 'package:udahni/data/repositories/pollen_repository.dart';
 import 'package:udahni/presentation/screens/main_screen.dart';
+import 'package:udahni/presentation/screens/onboarding_screen.dart';
 import 'package:udahni/presentation/viewmodels/home_view_model.dart';
 import 'package:udahni/presentation/viewmodels/map_view_model.dart';
 import 'package:udahni/presentation/viewmodels/personal_allergen_view_model.dart';
 
 //--------------------------------------------------------------------------
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final onboardingService = OnboardingService();
+  final showOnboarding = !await onboardingService.isOnboardingComplete();
   final pollenRepository = PollenRepository();
 
   runApp(
     MultiProvider(
       providers: [
+        Provider<OnboardingService>.value(value: onboardingService),
         Provider<PollenRepository>(
           create: (_) => pollenRepository,
           dispose: (_, repo) => repo.dispose(),
@@ -34,14 +41,16 @@ void main() {
           create: (_) => PersonalAllergenViewModel()..loadSelections(),
         ),
       ],
-      child: const AllergenApp(),
+      child: AllergenApp(showOnboarding: showOnboarding),
     ),
   );
 }
 
 //--------------------------------------------------------------------------
 class AllergenApp extends StatelessWidget {
-  const AllergenApp({super.key});
+  final bool showOnboarding;
+
+  const AllergenApp({super.key, required this.showOnboarding});
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +58,11 @@ class AllergenApp extends StatelessWidget {
       title: 'Udahni',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const MainScreen(),
+      initialRoute: showOnboarding ? '/onboarding' : '/',
+      routes: {
+        '/': (_) => const MainScreen(),
+        '/onboarding': (_) => const OnboardingScreen(),
+      },
     );
   }
 }

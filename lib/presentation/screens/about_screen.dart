@@ -1,5 +1,5 @@
-// ABOUTME: App information screen with allergen reference table.
-// ABOUTME: Shows allergenicity index legend, data source credits, and app version.
+// ABOUTME: About tab content — allergen reference table, data source credits, and app version.
+// ABOUTME: Shows allergenicity index legend for all tracked allergens.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -25,20 +25,14 @@ class _AboutScreenState extends State<AboutScreen> {
     final viewModel = context.watch<HomeViewModel>();
     final allergens = viewModel.allergens;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('O aplikaciji'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: allergens == null
-          ? viewModel.error != null
+    return allergens == null
+        ? viewModel.error != null
               ? ErrorState(
                   error: viewModel.error!,
                   onRetry: viewModel.fetchAllergens,
                 )
               : const Center(child: CircularProgressIndicator())
-          : _buildBody(context, allergens),
-    );
+        : _buildBody(context, allergens);
   }
 
   //--------------------------------------------------------------------------

@@ -1,7 +1,11 @@
+// ABOUTME: Top-level scaffold for the app — owns the AppBar, NavigationBar, and tab routing.
+// ABOUTME: The gear icon in the AppBar opens ProfileSettingsScreen.
+
 import 'package:flutter/material.dart';
 import 'package:udahni/presentation/screens/about_screen.dart';
 import 'package:udahni/presentation/screens/home_screen.dart';
 import 'package:udahni/presentation/screens/map_screen.dart';
+import 'package:udahni/presentation/screens/profile_settings_screen.dart';
 
 //--------------------------------------------------------------------------
 class MainScreen extends StatefulWidget {
@@ -15,6 +19,12 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
+  static const _tabTitles = [
+    'Početna',
+    'Mapa mernih stanica',
+    'O aplikaciji',
+  ];
+
   final List<Widget> _screens = [
     const HomeScreen(),
     const MapScreen(),
@@ -24,6 +34,24 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text(_tabTitles[_currentIndex]),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Profil i podešavanja',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ProfileSettingsScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: _screens[_currentIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,

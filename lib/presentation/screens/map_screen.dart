@@ -1,4 +1,4 @@
-// ABOUTME: Interactive map of Serbia's pollen monitoring stations.
+// ABOUTME: Map tab content — interactive map of Serbia's pollen monitoring stations.
 // ABOUTME: Displays color-coded markers with trend and risk info per location.
 
 import 'package:flutter/material.dart';
@@ -7,38 +7,78 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:udahni/core/helpers/allergen_type_helper.dart';
 import 'package:udahni/core/helpers/severity_helper.dart';
+import 'package:udahni/core/services/onboarding_service.dart';
 import 'package:udahni/data/models/locations.dart';
 import 'package:udahni/presentation/viewmodels/map_view_model.dart';
 import 'package:udahni/presentation/widgets/empty_state.dart';
 import 'package:udahni/presentation/widgets/error_state.dart';
+import 'package:udahni/presentation/widgets/hint_card.dart';
 import 'package:udahni/presentation/widgets/loading_state.dart';
 
 //--------------------------------------------------------------------------
-class MapScreen extends StatelessWidget {
+class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
+
+  @override
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+//--------------------------------------------------------------------------
+class _MapScreenState extends State<MapScreen> {
+  bool _showHint = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final service = context.read<OnboardingService>();
+      final visited = await service.hasVisitedScreen('map');
+      if (!mounted) return;
+      if (!visited) setState(() => _showHint = true);
+    });
+  }
+
+  void _dismissHint() async {
+    final service = context.read<OnboardingService>();
+    await service.markScreenVisited('map');
+    if (mounted) setState(() => _showHint = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     final mapViewModel = context.watch<MapViewModel>();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mapa mernih stanica'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: mapViewModel.isLoading
-          ? const LoadingState()
-          : mapViewModel.error != null
-          ? ErrorState(
-              error: mapViewModel.error!,
-              onRetry: mapViewModel.refreshLocations,
-            )
-          : mapViewModel.locations == null || mapViewModel.locations!.isEmpty
-          ? const EmptyState(title: 'Nema dostupnih lokacija.')
-          : _MapView(
-              locations: mapViewModel.locations!,
-              mapViewModel: mapViewModel,
+    final content = mapViewModel.isLoading
+        ? const LoadingState()
+        : mapViewModel.error != null
+        ? ErrorState(
+            error: mapViewModel.error!,
+            onRetry: mapViewModel.refreshLocations,
+          )
+        : mapViewModel.locations == null || mapViewModel.locations!.isEmpty
+        ? const EmptyState(title: 'Nema dostupnih lokacija.')
+        : _MapView(
+            locations: mapViewModel.locations!,
+            mapViewModel: mapViewModel,
+          );
+
+    return Stack(
+      children: [
+        content,
+        if (_showHint)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: HintCard(
+              message:
+                  'Tapnite marker stanice na mapi da vidite detalje i '
+                  'nivo rizika za tu lokaciju.',
+              onDismiss: _dismissHint,
             ),
+          ),
+      ],
     );
   }
 }
