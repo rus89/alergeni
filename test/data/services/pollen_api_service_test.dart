@@ -1,13 +1,16 @@
 // ABOUTME: Tests for PollenApiService HTTP layer: retry logic, error handling, URL construction.
 // ABOUTME: Uses MockClient from http/testing.dart injected via the constructor.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:udahni/core/errors/app_error.dart';
+import 'package:udahni/data/models/allergen.dart';
 import 'package:udahni/data/services/pollen_api_service.dart';
 
 const _base = 'http://test/api/opendata';
@@ -62,38 +65,62 @@ void main() {
       expect(callCount, 1);
     });
 
-    test('retries on 500 and succeeds on second attempt', () async {
-      var callCount = 0;
-      final service = _service((req) async {
-        callCount++;
-        return callCount == 1 ? _status(500) : _ok([_allergenJson()]);
-      });
+    test('retries on 500 and succeeds on second attempt', () {
+      fakeAsync((async) {
+        var callCount = 0;
+        final service = _service((req) async {
+          callCount++;
+          return callCount == 1 ? _status(500) : _ok([_allergenJson()]);
+        });
 
-      final result = await service.fetchAllergens();
-      expect(callCount, 2);
-      expect(result.length, 1);
+        List<Allergen>? result;
+        service.fetchAllergens().then((r) => result = r);
+
+        // Advance past first retry delay (attempt=0 → 300 ms)
+        async.elapse(const Duration(milliseconds: 400));
+
+        expect(callCount, 2);
+        expect(result, isNotNull);
+        expect(result!.length, 1);
+      });
     });
 
-    test('retries on 408', () async {
-      var callCount = 0;
-      final service = _service((req) async {
-        callCount++;
-        return callCount < 3 ? _status(408) : _ok([_allergenJson()]);
-      });
+    test('retries on 408', () {
+      fakeAsync((async) {
+        var callCount = 0;
+        final service = _service((req) async {
+          callCount++;
+          return callCount < 3 ? _status(408) : _ok([_allergenJson()]);
+        });
 
-      await service.fetchAllergens();
-      expect(callCount, 3);
+        List<Allergen>? result;
+        service.fetchAllergens().then((r) => result = r);
+
+        // Advance past two retry delays (attempt=0: 300 ms, attempt=1: 600 ms → total 900 ms)
+        async.elapse(const Duration(milliseconds: 1000));
+
+        expect(callCount, 3);
+        expect(result, isNotNull);
+      });
     });
 
-    test('retries on 429', () async {
-      var callCount = 0;
-      final service = _service((req) async {
-        callCount++;
-        return callCount < 2 ? _status(429) : _ok([_allergenJson()]);
-      });
+    test('retries on 429', () {
+      fakeAsync((async) {
+        var callCount = 0;
+        final service = _service((req) async {
+          callCount++;
+          return callCount < 2 ? _status(429) : _ok([_allergenJson()]);
+        });
 
-      await service.fetchAllergens();
-      expect(callCount, 2);
+        List<Allergen>? result;
+        service.fetchAllergens().then((r) => result = r);
+
+        // Advance past first retry delay (attempt=0 → 300 ms)
+        async.elapse(const Duration(milliseconds: 400));
+
+        expect(callCount, 2);
+        expect(result, isNotNull);
+      });
     });
 
     test('does not retry on 400', () async {
@@ -118,33 +145,89 @@ void main() {
       expect(callCount, 1);
     });
 
-    test('throws NoInternetError after exhausting retries on SocketException', () async {
-      var callCount = 0;
-      final service = _service((req) async {
-        callCount++;
-        throw const SocketException('No route to host');
-      });
+    test('throws NoInternetError after exhausting retries on SocketException', () {
+      fakeAsync((async) {
+        var callCount = 0;
+        final service = _service((req) async {
+          callCount++;
+          throw const SocketException('No route to host');
+        });
 
-      await expectLater(
-        service.fetchAllergens(),
-        throwsA(isA<NoInternetError>()),
-      );
-      // maxRetries is 3 from ApiConfig, so 4 total attempts
-      expect(callCount, 4);
+        Object? caught;
+        service.fetchAllergens().catchError((Object e) {
+          caught = e;
+          return <Allergen>[];
+        });
+
+        // maxRetries=3 → 4 total attempts, delays: 300 ms + 600 ms + 1200 ms = 2100 ms
+        async.elapse(const Duration(milliseconds: 2500));
+
+        expect(callCount, 4);
+        expect(caught, isA<NoInternetError>());
+      });
     });
 
-    test('throws UnexpectedError after exhausting retries on ClientException', () async {
-      var callCount = 0;
-      final service = _service((req) async {
-        callCount++;
-        throw http.ClientException('Connection reset');
-      });
+    test('throws NoInternetError after exhausting retries on TimeoutException', () {
+      fakeAsync((async) {
+        var callCount = 0;
+        final service = _service((req) async {
+          callCount++;
+          throw TimeoutException('Request timed out');
+        });
 
-      await expectLater(
-        service.fetchAllergens(),
-        throwsA(isA<UnexpectedError>()),
-      );
-      expect(callCount, 4);
+        Object? caught;
+        service.fetchAllergens().catchError((Object e) {
+          caught = e;
+          return <Allergen>[];
+        });
+
+        async.elapse(const Duration(milliseconds: 2500));
+
+        expect(callCount, 4);
+        expect(caught, isA<NoInternetError>());
+      });
+    });
+
+    test('throws ServerError after exhausting retries on 500', () {
+      fakeAsync((async) {
+        var callCount = 0;
+        final service = _service((req) async {
+          callCount++;
+          return _status(500);
+        });
+
+        Object? caught;
+        service.fetchAllergens().catchError((Object e) {
+          caught = e;
+          return <Allergen>[];
+        });
+
+        async.elapse(const Duration(milliseconds: 2500));
+
+        expect(callCount, 4);
+        expect(caught, isA<ServerError>());
+      });
+    });
+
+    test('throws UnexpectedError after exhausting retries on ClientException', () {
+      fakeAsync((async) {
+        var callCount = 0;
+        final service = _service((req) async {
+          callCount++;
+          throw http.ClientException('Connection reset');
+        });
+
+        Object? caught;
+        service.fetchAllergens().catchError((Object e) {
+          caught = e;
+          return <Allergen>[];
+        });
+
+        async.elapse(const Duration(milliseconds: 2500));
+
+        expect(callCount, 4);
+        expect(caught, isA<UnexpectedError>());
+      });
     });
   });
 
@@ -156,14 +239,26 @@ void main() {
       expect(result.first.name, 'Betula');
     });
 
-    test('500 throws ServerError', () async {
-      final service = _service((_) async => _status(500));
-      await expectLater(service.fetchAllergens(), throwsA(isA<ServerError>()));
+    test('500 throws ServerError', () {
+      fakeAsync((async) {
+        Object? caught;
+        _service((_) async => _status(500))
+            .fetchAllergens()
+            .catchError((Object e) { caught = e; return <Allergen>[]; });
+        async.elapse(const Duration(milliseconds: 2500));
+        expect(caught, isA<ServerError>());
+      });
     });
 
-    test('503 throws ServerError', () async {
-      final service = _service((_) async => _status(503));
-      await expectLater(service.fetchAllergens(), throwsA(isA<ServerError>()));
+    test('503 throws ServerError', () {
+      fakeAsync((async) {
+        Object? caught;
+        _service((_) async => _status(503))
+            .fetchAllergens()
+            .catchError((Object e) { caught = e; return <Allergen>[]; });
+        async.elapse(const Duration(milliseconds: 2500));
+        expect(caught, isA<ServerError>());
+      });
     });
 
     test('404 throws NotFoundError', () async {
@@ -174,6 +269,11 @@ void main() {
     test('400 throws UnexpectedError', () async {
       final service = _service((_) async => _status(400));
       await expectLater(service.fetchAllergens(), throwsA(isA<UnexpectedError>()));
+    });
+
+    test('malformed JSON on 200 throws', () async {
+      final service = _service((_) async => http.Response('not valid json {{', 200));
+      await expectLater(service.fetchAllergens(), throwsA(anything));
     });
   });
 
