@@ -165,4 +165,56 @@ YOU MUST follow this debugging framework for ANY technical issue:
 - Track patterns in user feedback to improve collaboration over time
 - When you notice something that should be fixed but is unrelated to your current task, document it in your journal rather than fixing it immediately
 
+## Project Overview
 
+App: "Udahni" (Breathe In) — pollen/allergen tracker for Serbia
+Package: `com.serbiaOpenData.udahni` | Version in `pubspec.yaml` | pubspec `name` field is `udahni`
+Platforms: Android + iOS | UI language: Serbian
+Status: Closed Testing on Google Play
+
+## Commands
+
+```bash
+flutter test        # Run all tests (must pass before committing)
+flutter analyze     # Static analysis (must be clean before committing)
+dart format .       # Format all Dart files
+flutter build apk   # Release build
+```
+
+## Architecture
+
+MVVM with Provider. Three layers:
+- `core/` — config, constants, `AppError` sealed class, helpers, theme
+- `data/` — 7 models, `PollenApiService` (retry/backoff), `PollenRepository` (in-memory cache)
+- `presentation/` — 3 ViewModels (`ChangeNotifier`), 5 screens, 11 widgets
+
+Data flow: REST API → `PollenApiService` → `PollenRepository` → ViewModels → Screens/Widgets
+
+No domain/use-case layer. ViewModels call the repository directly.
+
+## API Gotchas
+
+- HTTP only (no TLS) — server at `77.46.150.200` doesn't support HTTPS; Android has a `network_security_config` exception for this host
+- Two distinct base paths: `/api/opendata/*` for most data, `/api/site/{id}/` for weekly summaries
+- Batch concentration fetching uses a 3-strategy fallback: `id__in=` → repeated `id=` params → chunked individual fetches (groups of 6)
+- Historical data fallback: if today has no data, tries 1 year ago, then 2 years ago
+- Off-season: October–January. Auto-detected, shows dialog
+
+## Build Tagging
+
+When bumping the version in `pubspec.yaml` for a new build, tag the commit with `v<version>` (e.g. `v1.1.0+3`). The tag goes on the commit that sets the new version — this is the commit that gets built and submitted to the store.
+
+```bash
+git tag v<version> <commit-hash>
+```
+
+## Test Structure
+
+Tests mirror the `lib/` directory structure: `test/core/`, `test/data/`, `test/presentation/`
+
+Shared fakes and fixtures live in `test/helpers/`:
+- `FakePollenApiService` — fake for `PollenApiService`
+- `FakePollenRepository` — fake for `PollenRepository`
+- `test_data.dart` — shared fixture data
+
+Use `fakeAsync` (from the `fake_async` package) for time-dependent and async tests.
