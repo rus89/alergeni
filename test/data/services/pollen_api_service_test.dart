@@ -1,7 +1,6 @@
 // ABOUTME: Tests for PollenApiService HTTP layer: retry logic, error handling, URL construction.
 // ABOUTME: Uses MockClient from http/testing.dart injected via the constructor.
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
