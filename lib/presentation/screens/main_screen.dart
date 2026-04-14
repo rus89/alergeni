@@ -45,6 +45,7 @@ class _MainScreenState extends State<MainScreen> {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
+                  fullscreenDialog: true,
                   builder: (_) => const ProfileSettingsScreen(),
                 ),
               );

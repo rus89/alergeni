@@ -1,6 +1,8 @@
 // ABOUTME: Full-screen intro cards shown on first launch of the app.
 // ABOUTME: Lets users skip or advance through 4 cards before entering the main app.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:udahni/core/services/onboarding_service.dart';
@@ -50,8 +52,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final navigator = Navigator.of(context);
     await service.markOnboardingComplete();
     if (!mounted) return;
-    // ignore: unawaited_futures
-    navigator.pushReplacementNamed('/');
+    unawaited(navigator.pushReplacementNamed('/'));
   }
 
   @override

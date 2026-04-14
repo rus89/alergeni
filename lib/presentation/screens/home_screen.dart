@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
         viewModel.hasShownOffSeasonMessage = true;
       }
       final service = context.read<OnboardingService>();
-      final visited = await service.hasVisitedScreen('home');
+      final visited = await service.hasVisitedScreen(OnboardingService.homeKey);
       if (!mounted) return;
       if (!visited) setState(() => _showHint = true);
     });
@@ -48,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _dismissHint() async {
     final service = context.read<OnboardingService>();
-    await service.markScreenVisited('home');
+    await service.markScreenVisited(OnboardingService.homeKey);
     if (mounted) setState(() => _showHint = false);
   }
 
@@ -226,13 +226,49 @@ class _HomeScreenState extends State<HomeScreen> {
         ? 'Nedelja ${viewModel.siteData!.first.week}'
         : viewModel.selectedDate ?? 'N/A';
 
-    return WeeklySummaryCard(
-      locationName: viewModel.selectedLocation!.name,
-      overallStatus: overallStatus,
-      statusColor: statusColor,
-      weekOrDateLabel: weekOrDateLabel,
-      isShowingHistoricalData: viewModel.isShowingHistoricalData,
-      percentage: percentage,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.info_outline),
+              iconSize: 18,
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Nivoi ozbiljnosti'),
+                    content: const Text(
+                      'Svaki nivo ozbiljnosti je označen bojom:\n\n'
+                      '● Siva — nema koncentracije\n'
+                      '● Zelena — nizak nivo\n'
+                      '● Narandžasta — srednji nivo\n'
+                      '● Crvena — visok nivo\n\n'
+                      'Prikazana boja odgovara ukupnom statusu za izabranu stanicu.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('U redu'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        WeeklySummaryCard(
+          locationName: viewModel.selectedLocation!.name,
+          overallStatus: overallStatus,
+          statusColor: statusColor,
+          weekOrDateLabel: weekOrDateLabel,
+          isShowingHistoricalData: viewModel.isShowingHistoricalData,
+          percentage: percentage,
+        ),
+      ],
     );
   }
 

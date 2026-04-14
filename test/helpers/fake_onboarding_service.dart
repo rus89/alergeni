@@ -3,10 +3,12 @@
 
 import 'package:udahni/core/services/onboarding_service.dart';
 
-class FakeOnboardingService extends OnboardingService {
+class FakeOnboardingService implements OnboardingService {
   bool _complete;
   bool completeCalled = false;
   bool resetCalled = false;
+  bool markScreenVisitedCalled = false;
+  String? lastMarkScreenVisitedKey;
   final Set<String> _visitedScreens = {};
 
   FakeOnboardingService({bool isComplete = false}) : _complete = isComplete;
@@ -32,6 +34,9 @@ class FakeOnboardingService extends OnboardingService {
       _visitedScreens.contains(key);
 
   @override
-  Future<void> markScreenVisited(String key) async =>
-      _visitedScreens.add(key);
+  Future<void> markScreenVisited(String key) async {
+    markScreenVisitedCalled = true;
+    lastMarkScreenVisitedKey = key;
+    _visitedScreens.add(key);
+  }
 }

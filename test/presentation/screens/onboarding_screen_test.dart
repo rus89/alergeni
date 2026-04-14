@@ -63,9 +63,10 @@ void main() {
       await tester.pump();
 
       await tester.tap(find.text('Preskoči'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(service.completeCalled, isTrue);
+      expect(find.text('main'), findsOneWidget);
     });
 
     testWidgets('Počni calls markOnboardingComplete', (tester) async {
@@ -80,9 +81,10 @@ void main() {
       }
 
       await tester.tap(find.text('Počni'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(service.completeCalled, isTrue);
+      expect(find.text('main'), findsOneWidget);
     });
   });
 }

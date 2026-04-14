@@ -33,7 +33,7 @@ class _MapScreenState extends State<MapScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final service = context.read<OnboardingService>();
-      final visited = await service.hasVisitedScreen('map');
+      final visited = await service.hasVisitedScreen(OnboardingService.mapKey);
       if (!mounted) return;
       if (!visited) setState(() => _showHint = true);
     });
@@ -41,7 +41,7 @@ class _MapScreenState extends State<MapScreen> {
 
   void _dismissHint() async {
     final service = context.read<OnboardingService>();
-    await service.markScreenVisited('map');
+    await service.markScreenVisited(OnboardingService.mapKey);
     if (mounted) setState(() => _showHint = false);
   }
 
@@ -172,7 +172,26 @@ class _MapViewState extends State<_MapView> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.info_outline, size: 14),
+              GestureDetector(
+                onTap: () => showDialog<void>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('O stanicama na mapi'),
+                    content: const Text(
+                      'Svaki marker na mapi predstavlja stanicu za praćenje polena.\n\n'
+                      'Boja markera označava nedeljni trend: opadajući, stabilan ili rastući.\n\n'
+                      'Tapnite marker da vidite detaljan nivo rizika i trend za tu stanicu.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Razumem'),
+                      ),
+                    ],
+                  ),
+                ),
+                child: const Icon(Icons.info_outline, size: 14),
+              ),
               const SizedBox(width: 6),
               Text(
                 'Legenda',

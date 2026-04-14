@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:udahni/core/services/onboarding_service.dart';
 import 'package:udahni/presentation/screens/profile_settings_screen.dart';
+import 'package:udahni/presentation/widgets/hint_card.dart';
 import 'package:udahni/presentation/viewmodels/home_view_model.dart';
 import 'package:udahni/presentation/viewmodels/personal_allergen_view_model.dart';
 
@@ -55,9 +56,30 @@ void main() {
       await tester.pump();
 
       await tester.tap(find.text('Ponovi uvod'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(service.resetCalled, isTrue);
+      expect(find.text('onboarding'), findsOneWidget);
+    });
+
+    testWidgets('shows hint card on first visit', (tester) async {
+      await tester.pumpWidget(_buildTestApp(FakeOnboardingService()));
+      await tester.pumpAndSettle(); // let post-frame callback run
+
+      expect(find.byType(HintCard), findsOneWidget);
+    });
+
+    testWidgets('dismissing hint calls markScreenVisited and hides card', (tester) async {
+      final service = FakeOnboardingService();
+      await tester.pumpWidget(_buildTestApp(service));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pump();
+
+      expect(service.markScreenVisitedCalled, isTrue);
+      expect(service.lastMarkScreenVisitedKey, equals(OnboardingService.allergensKey));
+      expect(find.byType(HintCard), findsNothing);
     });
   });
 }

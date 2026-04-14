@@ -7,6 +7,10 @@ class OnboardingService {
   static const String _onboardingCompleteKey = 'onboarding_complete';
   static const String _visitedScreensKey = 'visited_screens';
 
+  static const String homeKey = 'home';
+  static const String mapKey = 'map';
+  static const String allergensKey = 'allergens';
+
   Future<bool> isOnboardingComplete() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_onboardingCompleteKey) ?? false;

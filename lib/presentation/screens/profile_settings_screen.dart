@@ -1,6 +1,8 @@
 // ABOUTME: Unified profile and settings destination, accessible from the app bar.
 // ABOUTME: Shows personal allergen selection and settings like replaying the onboarding intro.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:udahni/core/helpers/allergen_type_helper.dart';
@@ -27,7 +29,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final service = context.read<OnboardingService>();
-      final visited = await service.hasVisitedScreen('allergens');
+      final visited = await service.hasVisitedScreen(OnboardingService.allergensKey);
       if (!mounted) return;
       if (!visited) {
         setState(() => _showHint = true);
@@ -37,13 +39,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   void _dismissHint() async {
     final service = context.read<OnboardingService>();
-    await service.markScreenVisited('allergens');
+    await service.markScreenVisited(OnboardingService.allergensKey);
     if (mounted) setState(() => _showHint = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final allergens = context.read<HomeViewModel>().allergens ?? [];
+    final allergens = context.watch<HomeViewModel>().allergens ?? [];
     final personalVm = context.watch<PersonalAllergenViewModel>();
 
     final grouped = <int, List<Allergen>>{};
@@ -61,7 +63,35 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         children: [
           ListView(
             children: [
-              const _SectionHeader(title: 'Moji alergeni'),
+              Row(
+                children: [
+                  const Expanded(child: _SectionHeader(title: 'Moji alergeni')),
+                  IconButton(
+                    icon: const Icon(Icons.info_outline),
+                    tooltip: 'O mom spisku alergena',
+                    onPressed: () {
+                      showDialog<void>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Moji alergeni'),
+                          content: const Text(
+                            'Označite alergene koji vas pogađaju. '
+                            'Izabrani alergeni biće istaknuti u '
+                            'svakodnevnim izveštajima kako biste ih '
+                            'lakše uočili.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Razumem'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
               if (sortedTypeIds.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(16),
@@ -167,8 +197,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   final navigator = Navigator.of(context);
                   await service.resetOnboarding();
                   if (!mounted) return;
-                  // ignore: unawaited_futures
-                  navigator.pushReplacementNamed('/onboarding');
+                  unawaited(navigator.pushReplacementNamed('/onboarding'));
                 },
               ),
             ],
