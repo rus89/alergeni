@@ -4,13 +4,17 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:http/http.dart' as http;
+
 sealed class AppError {
   const AppError();
 
   String get userMessage;
 
   factory AppError.fromException(Object exception) {
-    if (exception is SocketException || exception is TimeoutException) {
+    if (exception is SocketException ||
+        exception is TimeoutException ||
+        exception is http.ClientException) {
       return const NoInternetError();
     }
     return UnexpectedError(debugMessage: exception.toString());

@@ -209,7 +209,7 @@ void main() {
       });
     });
 
-    test('throws UnexpectedError after exhausting retries on ClientException', () {
+    test('throws NoInternetError after exhausting retries on ClientException', () {
       fakeAsync((async) {
         var callCount = 0;
         final service = _service((req) async {
@@ -226,7 +226,7 @@ void main() {
         async.elapse(const Duration(milliseconds: 2500));
 
         expect(callCount, 4);
-        expect(caught, isA<UnexpectedError>());
+        expect(caught, isA<NoInternetError>());
       });
     });
   });

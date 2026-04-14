@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:udahni/core/errors/app_error.dart';
 
 void main() {
@@ -20,6 +21,13 @@ void main() {
     test('classifies TimeoutException as noInternet', () {
       final error = AppError.fromException(
         TimeoutException('Request timed out'),
+      );
+      expect(error, isA<NoInternetError>());
+    });
+
+    test('classifies ClientException as noInternet', () {
+      final error = AppError.fromException(
+        http.ClientException('Connection reset'),
       );
       expect(error, isA<NoInternetError>());
     });
