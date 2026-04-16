@@ -67,8 +67,15 @@ run_device() {
   echo ""
   echo "=== Processing device: ${device_name} (AVD: ${avd_name}) ==="
 
-  # Boot emulator in background
+  # Boot emulator in background; save PID for cleanup trap.
+  # Assumes no other emulators are running — head -1 picks the first emulator serial,
+  # which will be this one if the machine is otherwise idle.
   emulator -avd "${avd_name}" &
+  local EMULATOR_PID=$!
+
+  # Kill the emulator process if the script exits early (set -e or signal).
+  # The trap is removed after a clean shutdown below.
+  trap "kill $EMULATOR_PID 2>/dev/null || true" EXIT
 
   # Wait for adb to see the device
   adb wait-for-device
@@ -83,9 +90,16 @@ run_device() {
 
   echo "Detected emulator: ${DEVICE_ID}. Waiting for full Android boot..."
 
-  # Wait for Android to finish booting (sys.boot_completed = 1)
+  # Wait for Android to finish booting (sys.boot_completed = 1), 5-minute timeout.
+  local waited=0
   until adb -s "$DEVICE_ID" shell getprop sys.boot_completed 2>/dev/null | grep -q '1'; do
     sleep 3
+    waited=$((waited + 3))
+    if [ "$waited" -ge 300 ]; then
+      echo "ERROR: Emulator ${DEVICE_ID} did not boot within 5 minutes"
+      adb -s "$DEVICE_ID" emu kill 2>/dev/null || true
+      exit 1
+    fi
   done
 
   echo "Device ${DEVICE_ID} fully booted. Running flutter drive..."
@@ -98,9 +112,20 @@ run_device() {
 
   echo "flutter drive complete. Shutting down ${DEVICE_ID}..."
 
-  # Gracefully shut down the emulator and wait for it to disappear from adb
+  # Gracefully shut down the emulator and wait for it to disappear from adb, 60-second timeout.
   adb -s "$DEVICE_ID" emu kill
-  until ! adb devices | grep -q "$DEVICE_ID"; do sleep 2; done
+  local shutdown_waited=0
+  until ! adb devices | grep -q "$DEVICE_ID"; do
+    sleep 2
+    shutdown_waited=$((shutdown_waited + 2))
+    if [ "$shutdown_waited" -ge 60 ]; then
+      echo "WARNING: Emulator ${DEVICE_ID} did not stop within 60 seconds, continuing"
+      break
+    fi
+  done
+
+  # Clean shutdown completed; remove the emergency exit trap.
+  trap - EXIT
 
   echo "Device ${DEVICE_ID} stopped."
 }
