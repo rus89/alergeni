@@ -50,7 +50,7 @@ preflight_checks() {
   fi
 
   local month
-  month=$(date +%-m)
+  month=$(printf '%d' "$(date +%m)")
   if [ "$month" -eq 10 ] || [ "$month" -eq 11 ] || [ "$month" -eq 12 ] || [ "$month" -eq 1 ]; then
     echo "WARNING: Current month is off-season. The app may show the off-season dialog."
   fi
