@@ -203,9 +203,18 @@ No domain/use-case layer. ViewModels call the repository directly.
 - Off-season: October–January. Auto-detected, shows dialog
 - Persistence: `PersonalAllergenViewModel` and `HomeViewModel` call `SharedPreferences.getInstance()` directly — not via `OnboardingService`. Only onboarding state goes through the service abstraction.
 
+## Known Tech Debt
+
+- `AboutScreen` shows hardcoded `"Verzija 1.0.0"` — pubspec version is `1.1.0+3`
+- `home_view_model.dart` is ~600 lines — large, treat carefully before adding more
+- `map_screen.dart` (~530 lines), `pollen_api_service.dart` and `about_screen.dart` (~420 lines each) are near the 800-line limit
+- `MapViewModel` fetches 29 locations sequentially in a for-loop (no parallelism)
+- Potentially unused widgets: `PollenStatusCard`, `OffSeasonMessage`, `AllergenCard` — verify before modifying
+
 ## Screenshot Pipeline
 
 Captures Play Store screenshots across 3 emulator profiles (phone, tablet_7, tablet_10).
+The script drives `integration_test/screenshot_test.dart` via `flutter drive`.
 
 ```bash
 # One-time: install system image and create AVDs (arm64-v8a required on Apple Silicon)
@@ -220,6 +229,11 @@ sdkmanager "system-images;android-34;google_apis;arm64-v8a"
 
 Raw captures land in `assets/screenshots/raw/` (gitignored). Store-ready PNGs go to
 `assets/screenshots/store/{phone,tablet_7,tablet_10}/` (checked in).
+
+**Impeller gotcha**: `convertFlutterSurfaceToImage()` (required by the integration_test
+framework for screenshot capture) does not work with Flutter's Impeller rendering backend —
+it hangs silently. The script passes `--no-enable-impeller` to `flutter drive` to force the
+Skia backend for the screenshot run only.
 
 ## Build Tagging
 
@@ -240,3 +254,6 @@ Shared fakes and fixtures live in `test/helpers/`:
 - `test_data.dart` — shared fixture data
 
 Use `fakeAsync` (from the `fake_async` package) for time-dependent and async tests.
+
+`integration_test/screenshot_test.dart` — screenshot capture integration test.
+Run via the screenshot pipeline script, NOT via `flutter test` (requires a running emulator).
