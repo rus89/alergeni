@@ -74,16 +74,20 @@ run_device() {
   # The trap is removed after a clean shutdown below.
   trap "kill $EMULATOR_PID 2>/dev/null || true" EXIT
 
-  # Wait for adb to see the device
-  adb wait-for-device
-
-  # Detect device serial (adb wait-for-device doesn't guarantee which emulator)
-  local DEVICE_ID
-  DEVICE_ID=$(adb devices | grep 'emulator-' | head -1 | awk '{print $1}')
-  if [ -z "$DEVICE_ID" ]; then
-    echo "ERROR: No emulator detected after boot"
-    exit 1
-  fi
+  # Poll until an emulator-XXXX serial appears in adb devices (2-minute timeout).
+  # adb wait-for-device returns for any transport (including non-emulator devices),
+  # so we poll for an emulator serial directly.
+  local DEVICE_ID=""
+  local appear_waited=0
+  while [ -z "$DEVICE_ID" ]; do
+    sleep 3
+    appear_waited=$((appear_waited + 3))
+    DEVICE_ID=$(adb devices | grep 'emulator-' | head -1 | awk '{print $1}')
+    if [ "$appear_waited" -ge 120 ] && [ -z "$DEVICE_ID" ]; then
+      echo "ERROR: Emulator did not appear in adb devices within 2 minutes"
+      exit 1
+    fi
+  done
 
   echo "Detected emulator: ${DEVICE_ID}. Waiting for full Android boot..."
 
