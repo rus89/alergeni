@@ -7,7 +7,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-SYSTEM_IMAGE="system-images;android-34;google_apis;x86_64"
+SYSTEM_IMAGE="system-images;android-34;google_apis;arm64-v8a"
 
 avd_name_for() {
   case "$1" in
