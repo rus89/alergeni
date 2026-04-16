@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+# ABOUTME: Shell script that automates Play Store screenshot capture across 3 Android emulators.
+# ABOUTME: Manages AVD lifecycle: boot, capture, shutdown. Writes PNGs to assets/screenshots/raw/.
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+SYSTEM_IMAGE="system-images;android-34;google_apis;x86_64"
+
+declare -A AVD_NAMES=(
+  [phone]="screenshot_phone"
+  [tablet_7]="screenshot_tablet_7"
+  [tablet_10]="screenshot_tablet_10"
+)
+
+declare -A AVD_DEVICES=(
+  [phone]="pixel_7"
+  [tablet_7]="Nexus 7 2013"
+  [tablet_10]="pixel_tablet"
+)
+
+# ---------------------------------------------------------------------------
+# --setup: create AVDs idempotently
+# ---------------------------------------------------------------------------
+cmd_setup() {
+  echo "NOTE: The system image must be installed before creating AVDs. Run:"
+  echo "  sdkmanager \"${SYSTEM_IMAGE}\""
+  echo ""
+
+  avdmanager list avd | grep -q "screenshot_phone" || \
+    avdmanager create avd -n "screenshot_phone" -k "${SYSTEM_IMAGE}" -d "pixel_7"
+
+  avdmanager list avd | grep -q "screenshot_tablet_7" || \
+    avdmanager create avd -n "screenshot_tablet_7" -k "${SYSTEM_IMAGE}" -d "Nexus 7 2013"
+
+  avdmanager list avd | grep -q "screenshot_tablet_10" || \
+    avdmanager create avd -n "screenshot_tablet_10" -k "${SYSTEM_IMAGE}" -d "pixel_tablet"
+
+  echo "AVD setup complete."
+}
+
+# ---------------------------------------------------------------------------
+# Pre-flight checks: API reachability and off-season warning
+# ---------------------------------------------------------------------------
+preflight_checks() {
+  if ! curl -s --max-time 5 "http://77.46.150.200/api/opendata/locations/" -o /dev/null; then
+    echo "WARNING: API endpoint is unreachable. Screenshots may show error states."
+  fi
+
+  local month
+  month=$(date +%-m)
+  if [ "$month" -eq 10 ] || [ "$month" -eq 11 ] || [ "$month" -eq 12 ] || [ "$month" -eq 1 ]; then
+    echo "WARNING: Current month is off-season. The app may show the off-season dialog."
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Run screenshot capture for a single device key (phone | tablet_7 | tablet_10)
+# ---------------------------------------------------------------------------
+run_device() {
+  local device_key="$1"
+  local avd_name="${AVD_NAMES[$device_key]}"
+  local device_name="$device_key"
+
+  echo ""
+  echo "=== Processing device: ${device_name} (AVD: ${avd_name}) ==="
+
+  # Boot emulator in background
+  emulator -avd "${avd_name}" &
+
+  # Wait for adb to see the device
+  adb wait-for-device
+
+  # Detect device serial (adb wait-for-device doesn't guarantee which emulator)
+  local DEVICE_ID
+  DEVICE_ID=$(adb devices | grep 'emulator-' | head -1 | awk '{print $1}')
+  if [ -z "$DEVICE_ID" ]; then
+    echo "ERROR: No emulator detected after boot"
+    exit 1
+  fi
+
+  echo "Detected emulator: ${DEVICE_ID}. Waiting for full Android boot..."
+
+  # Wait for Android to finish booting (sys.boot_completed = 1)
+  until adb -s "$DEVICE_ID" shell getprop sys.boot_completed 2>/dev/null | grep -q '1'; do
+    sleep 3
+  done
+
+  echo "Device ${DEVICE_ID} fully booted. Running flutter drive..."
+
+  # Run the screenshot driver test with the device name injected via env var
+  SCREENSHOT_DEVICE_NAME="$device_name" flutter drive \
+    --driver=test_driver/integration_test.dart \
+    --target=integration_test/screenshot_test.dart \
+    -d "$DEVICE_ID"
+
+  echo "flutter drive complete. Shutting down ${DEVICE_ID}..."
+
+  # Gracefully shut down the emulator and wait for it to disappear from adb
+  adb -s "$DEVICE_ID" emu kill
+  until ! adb devices | grep -q "$DEVICE_ID"; do sleep 2; done
+
+  echo "Device ${DEVICE_ID} stopped."
+}
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+main() {
+  local arg="${1:-}"
+
+  if [ "$arg" = "--setup" ]; then
+    cmd_setup
+    exit 0
+  fi
+
+  preflight_checks
+
+  if [ -z "$arg" ]; then
+    # Default: run all devices
+    run_device "phone"
+    run_device "tablet_7"
+    run_device "tablet_10"
+  elif [ "$arg" = "phone" ] || [ "$arg" = "tablet_7" ] || [ "$arg" = "tablet_10" ]; then
+    run_device "$arg"
+  else
+    echo "Usage: $0 [--setup | phone | tablet_7 | tablet_10]"
+    echo "  (no argument) — runs all three devices"
+    exit 1
+  fi
+
+  echo ""
+  echo "Screenshot capture complete."
+}
+
+main "$@"
