@@ -1,0 +1,133 @@
+# Play Store Screenshot Pipeline
+
+## Context
+
+Tester feedback identified that the current Play Store screenshots are raw, unpolished captures that don't effectively showcase the app's features. Screenshots are a key conversion driver — potential users decide whether to install based largely on what they see in the listing. The current screenshots lack captions, device framing, branding, and don't highlight the most compelling features (personal allergens, map, profile settings). Two of four screenshots show the About screen, which is the least interesting to a prospective user.
+
+This spec defines a hybrid approach: automated screenshot capture via Flutter integration tests, with manual compositing in Figma for the final polished assets.
+
+## Approach
+
+**Hybrid: Programmatic capture + Figma compositing**
+
+- **Capture layer:** Flutter `integration_test` running on real Android emulators at 3 device resolutions. Produces clean PNGs of each screen with real API data, no status bar.
+- **Compositing layer:** Free Figma template with device frames, branded gradient backgrounds, and Serbian captions. Milan applies raw captures to the template and exports final PNGs.
+
+### Why this approach
+
+- `golden_toolkit` was evaluated and rejected — it renders in a synthetic test environment with no network (map tiles won't load), no platform fonts, and no system UI. Designed for regression testing, not marketing assets.
+- `appscreens.com` was evaluated and rejected — $89/year is not justified for a single app in a single language. Figma community templates achieve the same result for free.
+- Fully programmatic compositing (adding frames/captions in code) was rejected — too much effort for marginal benefit, and limits creative control.
+
+## Screenshots to Capture
+
+| # | Screen | App state | Caption (Serbian) | What it sells |
+|---|--------|-----------|--------------------|---------------|
+| 1 | Home | Loaded with pollen data, personal allergens highlighted, Beograd selected | "Dnevni pregled polena za vaš grad" | Personalized, location-aware |
+| 2 | Map | Fully loaded with color-coded station markers, legend visible | "Mapa svih mernih stanica u Srbiji" | National coverage |
+| 3 | Profile/Settings | Allergen selection visible, some allergens toggled on | "Izaberite alergene koji vas pogađaju" | Personalization |
+| 4 | Home (weekly) | Weekly summary card prominently visible | "Nedeljni pregled koncentracija" | Trend awareness |
+| 5 | *(Future)* | Home in dark mode | "Tamni režim za noćno praćenje" | Polish, dark mode |
+
+Screenshot #1 (home) must be first in the Play Store listing — it's the strongest selling point. Screenshot #5 is deferred until dark mode is implemented.
+
+## Device Resolutions
+
+| Form factor | AVD profile | Resolution (px) | Aspect ratio |
+|-------------|-------------|------------------|--------------|
+| Phone | Pixel 7 | 1080 x 2400 | 9:20 |
+| 7-inch tablet | Nexus 7 | 1200 x 1920 | 10:16 |
+| 10-inch tablet | Pixel Tablet | 1600 x 2560 | 10:16 |
+
+## Files to Create
+
+### `integration_test/screenshot_test.dart`
+
+Integration test that navigates the app to each screenshot state and captures PNGs.
+
+**App state setup via SharedPreferences:**
+- `onboarding_complete: true` (skip onboarding flow)
+- `selected_city: "BEOGRAD"` (most recognizable city)
+- `personal_allergens: ["LESKA", "TISA/ČEMPR.", "AMBROZIJA"]` (realistic selection)
+
+**Test flow:**
+1. Set SharedPreferences, launch app
+2. Wait for home screen data to load (poll until loading indicator gone)
+3. Set `SystemUiMode.immersive` to hide status bar
+4. Capture `01_home.png`
+5. Navigate to map tab
+6. Wait for map tiles and station markers (fixed 5-second delay — no reliable "done" signal for tile loading)
+7. Capture `02_map.png`
+8. Navigate to profile/settings
+9. Capture `03_profile.png`
+10. Navigate back to home, scroll to weekly overview card
+11. Capture `04_weekly.png`
+12. Restore system UI mode
+
+### `scripts/capture_screenshots.sh`
+
+Shell script that orchestrates the capture across all 3 emulator profiles.
+
+**Features:**
+- `--setup` flag creates AVDs if they don't exist (via `avdmanager`)
+- Accepts optional device argument: `./scripts/capture_screenshots.sh phone`
+- For each device: boot emulator → run integration test → collect PNGs → shut down emulator
+- Pre-flight check: warns if API appears down or it's off-season (Oct-Jan)
+- Outputs to `assets/screenshots/raw/{phone,tablet_7,tablet_10}/`
+
+**AVD creation commands (used by `--setup`):**
+```bash
+avdmanager create avd -n "screenshot_phone" -k "system-images;android-34;google_apis;x86_64" -d "pixel_7"
+avdmanager create avd -n "screenshot_tablet_7" -k "system-images;android-34;google_apis;x86_64" -d "Nexus 7"
+avdmanager create avd -n "screenshot_tablet_10" -k "system-images;android-34;google_apis;x86_64" -d "pixel_tablet"
+```
+
+## Output Structure
+
+```
+assets/screenshots/
+├── raw/                    ← gitignored, generated by capture script
+│   ├── phone/
+│   │   ├── 01_home.png
+│   │   ├── 02_map.png
+│   │   ├── 03_profile.png
+│   │   └── 04_weekly.png
+│   ├── tablet_7/
+│   │   └── (same files)
+│   └── tablet_10/
+│       └── (same files)
+└── store/                  ← committed, final composited images for Play Console
+    ├── phone/
+    ├── tablet_7/
+    └── tablet_10/
+```
+
+The existing `assets/screenshots/*.jpg` files are replaced by the contents of `store/`.
+
+## Figma Compositing Guidelines
+
+**Per-screenshot layout:**
+- Background: gradient using the app's green palette (#4CAF50 range)
+- Caption: clean sans-serif, white text, bold, 1-2 lines, positioned above device frame
+- Device frame: generic Android frame (not brand-specific), from Figma template
+- No app logo on every screenshot — let the UI speak
+
+**Export specs:**
+- Phone: 1080 x 1920 px minimum, PNG
+- 7-inch tablet: 1200 x 1920 px minimum, PNG
+- 10-inch tablet: 1600 x 2560 px minimum, PNG
+
+## Constraints and Edge Cases
+
+- **Off-season (Oct-Jan):** API returns no current data. Screenshots can only be captured during pollen season (Feb-Oct). The script warns about this.
+- **API downtime:** The test hits the real API at `77.46.150.200`. If the API is unreachable, the home screen shows an error state. The script performs a pre-flight HTTP check.
+- **Map tile timing:** No programmatic signal for "all tiles loaded." A 5-second fixed delay is a pragmatic compromise. If tiles are incomplete, re-run the capture.
+- **Dark mode (future):** Screenshot #5 is a placeholder. When dark mode is implemented, add one more capture step to the integration test and one more slot in the Figma template.
+
+## Verification
+
+1. Run `./scripts/capture_screenshots.sh --setup` — AVDs should be created without errors
+2. Run `./scripts/capture_screenshots.sh phone` — should produce 4 PNGs in `assets/screenshots/raw/phone/`
+3. Verify each PNG: correct screen content, no status bar, correct resolution
+4. Import raw PNGs into Figma template, export composited versions to `assets/screenshots/store/phone/`
+5. Upload to Play Console, verify they display correctly in the listing preview
