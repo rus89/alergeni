@@ -9,17 +9,13 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 SYSTEM_IMAGE="system-images;android-34;google_apis;x86_64"
 
-declare -A AVD_NAMES=(
-  ["phone"]="screenshot_phone"
-  ["tablet_7"]="screenshot_tablet_7"
-  ["tablet_10"]="screenshot_tablet_10"
-)
-
-declare -A AVD_DEVICES=(
-  ["phone"]="pixel_7"
-  ["tablet_7"]="Nexus 7 2013"
-  ["tablet_10"]="pixel_tablet"
-)
+avd_name_for() {
+  case "$1" in
+    phone)     echo "screenshot_phone" ;;
+    tablet_7)  echo "screenshot_tablet_7" ;;
+    tablet_10) echo "screenshot_tablet_10" ;;
+  esac
+}
 
 # ---------------------------------------------------------------------------
 # --setup: create AVDs idempotently
@@ -61,7 +57,8 @@ preflight_checks() {
 # ---------------------------------------------------------------------------
 run_device() {
   local device_key="$1"
-  local avd_name="${AVD_NAMES[$device_key]}"
+  local avd_name
+  avd_name=$(avd_name_for "$device_key")
   local device_name="$device_key"
 
   echo ""
