@@ -179,14 +179,16 @@ flutter test        # Run all tests (must pass before committing)
 flutter analyze     # Static analysis (must be clean before committing)
 dart format .       # Format all Dart files
 flutter build apk   # Release build
+flutter build ipa   # iOS release build (requires Xcode)
 ```
 
 ## Architecture
 
 MVVM with Provider. Three layers:
 - `core/` — config, constants, `AppError` sealed class, helpers, theme
+- `core/services/` — `OnboardingService` (tracks first-run onboarding state via SharedPreferences)
 - `data/` — 7 models, `PollenApiService` (retry/backoff), `PollenRepository` (in-memory cache)
-- `presentation/` — 3 ViewModels (`ChangeNotifier`), 5 screens, 11 widgets
+- `presentation/` — 3 ViewModels (`ChangeNotifier`), 6 screens, 11 widgets
 
 Data flow: REST API → `PollenApiService` → `PollenRepository` → ViewModels → Screens/Widgets
 
@@ -199,6 +201,25 @@ No domain/use-case layer. ViewModels call the repository directly.
 - Batch concentration fetching uses a 3-strategy fallback: `id__in=` → repeated `id=` params → chunked individual fetches (groups of 6)
 - Historical data fallback: if today has no data, tries 1 year ago, then 2 years ago
 - Off-season: October–January. Auto-detected, shows dialog
+- Persistence: `PersonalAllergenViewModel` and `HomeViewModel` call `SharedPreferences.getInstance()` directly — not via `OnboardingService`. Only onboarding state goes through the service abstraction.
+
+## Screenshot Pipeline
+
+Captures Play Store screenshots across 3 emulator profiles (phone, tablet_7, tablet_10).
+
+```bash
+# One-time: install system image and create AVDs (arm64-v8a required on Apple Silicon)
+sdkmanager "system-images;android-34;google_apis;arm64-v8a"
+./scripts/capture_screenshots.sh --setup
+
+# Capture screenshots for a specific device
+./scripts/capture_screenshots.sh phone
+./scripts/capture_screenshots.sh tablet_7
+./scripts/capture_screenshots.sh tablet_10
+```
+
+Raw captures land in `assets/screenshots/raw/` (gitignored). Store-ready PNGs go to
+`assets/screenshots/store/{phone,tablet_7,tablet_10}/` (checked in).
 
 ## Build Tagging
 
@@ -215,6 +236,7 @@ Tests mirror the `lib/` directory structure: `test/core/`, `test/data/`, `test/p
 Shared fakes and fixtures live in `test/helpers/`:
 - `FakePollenApiService` — fake for `PollenApiService`
 - `FakePollenRepository` — fake for `PollenRepository`
+- `FakeOnboardingService` — fake for `OnboardingService`
 - `test_data.dart` — shared fixture data
 
 Use `fakeAsync` (from the `fake_async` package) for time-dependent and async tests.
