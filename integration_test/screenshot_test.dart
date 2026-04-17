@@ -2,7 +2,6 @@
 // ABOUTME: Must be run via `flutter drive` on a real emulator — not `flutter test`.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +10,15 @@ import 'package:udahni/main.dart' as app;
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  // Ensure a frame is rasterized into FlutterImageView before each takeScreenshot.
+  // Without this, takeScreenshot blocks its RPC reply waiting for a frame that
+  // never arrives.
+  Future<void> settleForScreenshot(WidgetTester tester) async {
+    await tester.pump();
+    await Future.delayed(const Duration(milliseconds: 500));
+    await tester.pump();
+  }
 
   testWidgets('capture Play Store screenshots', (tester) async {
     // 1. Pre-seed SharedPreferences (clear first for clean state on repeated runs)
@@ -41,51 +49,49 @@ void main() {
       );
     }
 
-    // 4. Hide status bar for clean screenshots
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+    // 4. Switch the Flutter surface to image-capture mode. Must be called once,
+    //    after the UI is stable, before any takeScreenshot.
+    await binding.convertFlutterSurfaceToImage();
 
-    // 5. Let the platform channel call take effect (status bar hides on next frame)
-    await tester.pump(const Duration(milliseconds: 300));
-
-    // 6. Screenshot 1: Home screen
+    // 5. Screenshot 1: Home screen
+    await settleForScreenshot(tester);
     await binding.takeScreenshot('01_home');
 
-    // 7. Navigate to Map tab
+    // 6. Navigate to Map tab
     await tester.tap(find.byIcon(Icons.map_outlined));
 
-    // 8. Tab animation only — pumpAndSettle() unsafe here: flutter_map setState on each tile load
+    // 7. Tab animation only — pumpAndSettle() unsafe here: flutter_map setState on each tile load
     await tester.pump(const Duration(milliseconds: 300));
 
-    // 9. Wait for map tiles to load
-    await Future.delayed(const Duration(seconds: 5));
+    // 8. Wait for map tiles to load. Sized for the largest viewport (pixel_tablet):
+    //    smaller devices finish sooner but this runs once per device, so the idle
+    //    time is acceptable.
+    await Future.delayed(const Duration(seconds: 15));
 
-    // 10. Render final tile state
-    await tester.pump();
-
-    // 11. Screenshot 2: Map
+    // 9. Screenshot 2: Map
+    await settleForScreenshot(tester);
     await binding.takeScreenshot('02_map');
 
-    // 12. Open profile/settings screen via gear icon
+    // 10. Open profile/settings screen via gear icon
     await tester.tap(find.byIcon(Icons.settings_outlined));
 
-    // 13. Wait for profile screen (safe to use pumpAndSettle — no ongoing animations)
+    // 11. Wait for profile screen (safe to use pumpAndSettle — no ongoing animations)
     await tester.pumpAndSettle();
 
-    // 14. Screenshot 3: Profile/settings
+    // 12. Screenshot 3: Profile/settings
+    await settleForScreenshot(tester);
     await binding.takeScreenshot('03_profile');
 
-    // 15. Navigate back (works for fullscreenDialog back arrow and X button)
+    // 13. Navigate back (works for fullscreenDialog back arrow and X button)
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    // 16. Navigate to Home tab and capture weekly summary
+    // 14. Navigate to Home tab and capture weekly summary
     await tester.tap(find.byIcon(Icons.home_outlined));
     await tester.pumpAndSettle();
 
-    // 17. Screenshot 4: Home with WeeklySummaryCard visible
+    // 15. Screenshot 4: Home with WeeklySummaryCard visible
+    await settleForScreenshot(tester);
     await binding.takeScreenshot('04_weekly');
-
-    // 18. Restore system UI
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   });
 }

@@ -105,10 +105,13 @@ run_device() {
 
   echo "Device ${DEVICE_ID} fully booted. Running flutter drive..."
 
-  # Run the screenshot driver test with the device name injected via env var
+  # Run the screenshot driver test with the device name injected via env var.
+  # --no-enable-impeller: convertFlutterSurfaceToImage() (required for screenshots)
+  # does not work with Impeller — must use the Skia backend for this run.
   SCREENSHOT_DEVICE_NAME="$device_name" flutter drive \
     --driver=test_driver/integration_test.dart \
     --target=integration_test/screenshot_test.dart \
+    --no-enable-impeller \
     -d "$DEVICE_ID"
 
   echo "flutter drive complete. Shutting down ${DEVICE_ID}..."
