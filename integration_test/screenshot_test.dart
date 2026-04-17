@@ -82,15 +82,26 @@ void main() {
     await settleForScreenshot(tester);
     await binding.takeScreenshot('03_profile');
 
-    // 13. Navigate back (works for fullscreenDialog back arrow and X button)
-    await tester.pageBack();
+    // 13. Close the fullscreenDialog. tester.pageBack() can't be used here —
+    //     it only finds a Back tooltip or CupertinoNavigationBarBackButton,
+    //     whereas fullscreenDialog injects a Material CloseButton (Icons.close)
+    //     with a localized tooltip.
+    await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
 
-    // 14. Navigate to Home tab and capture weekly summary
+    // 14. Navigate to Home tab
     await tester.tap(find.byIcon(Icons.home_outlined));
     await tester.pumpAndSettle();
 
-    // 15. Screenshot 4: Home with WeeklySummaryCard visible
+    // 15. Scroll so LocationSelectorCard goes off-screen and WeeklySummaryCard
+    //     sits at the top. Without this the shot is visually identical to 01_home.
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -300),
+    );
+    await tester.pumpAndSettle();
+
+    // 16. Screenshot 4: Home scrolled to weekly summary
     await settleForScreenshot(tester);
     await binding.takeScreenshot('04_weekly');
   });
