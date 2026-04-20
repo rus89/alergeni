@@ -11,10 +11,7 @@ abstract interface class ExternalActions {
 }
 
 class PlatformExternalActions implements ExternalActions {
-  PlatformExternalActions({InAppReview? inAppReview})
-    : _inAppReview = inAppReview ?? InAppReview.instance;
-
-  final InAppReview _inAppReview;
+  const PlatformExternalActions();
 
   @override
   Future<void> openPrivacyPolicy() async {
@@ -24,10 +21,9 @@ class PlatformExternalActions implements ExternalActions {
 
   @override
   Future<void> requestAppReview() async {
-    if (await _inAppReview.isAvailable()) {
-      await _inAppReview.requestReview();
-    } else {
-      await _inAppReview.openStoreListing();
-    }
+    // Use the Play Store listing as the destination for the explicit Settings
+    // action. The in-app review API silently no-ops on builds not installed
+    // from Play Store, which is surprising when triggered from an explicit tap.
+    await InAppReview.instance.openStoreListing();
   }
 }

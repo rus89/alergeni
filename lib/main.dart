@@ -25,7 +25,7 @@ void main() async {
     MultiProvider(
       providers: [
         Provider<OnboardingService>.value(value: onboardingService),
-        Provider<ExternalActions>(create: (_) => PlatformExternalActions()),
+        Provider<ExternalActions>(create: (_) => const PlatformExternalActions()),
         Provider<PollenRepository>(
           create: (_) => pollenRepository,
           dispose: (_, repo) => repo.dispose(),
