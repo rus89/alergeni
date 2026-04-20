@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:udahni/core/services/external_actions.dart';
 import 'package:udahni/core/services/onboarding_service.dart';
 import 'package:udahni/core/theme/app_theme.dart';
 import 'package:udahni/data/repositories/pollen_repository.dart';
@@ -24,6 +25,7 @@ void main() async {
     MultiProvider(
       providers: [
         Provider<OnboardingService>.value(value: onboardingService),
+        Provider<ExternalActions>(create: (_) => PlatformExternalActions()),
         Provider<PollenRepository>(
           create: (_) => pollenRepository,
           dispose: (_, repo) => repo.dispose(),

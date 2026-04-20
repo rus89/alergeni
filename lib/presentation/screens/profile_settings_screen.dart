@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:udahni/core/helpers/allergen_type_helper.dart';
 import 'package:udahni/core/helpers/severity_helper.dart';
+import 'package:udahni/core/services/external_actions.dart';
 import 'package:udahni/core/services/onboarding_service.dart';
 import 'package:udahni/data/models/allergen.dart';
 import 'package:udahni/presentation/viewmodels/home_view_model.dart';
@@ -199,6 +200,18 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   if (!mounted) return;
                   unawaited(navigator.pushReplacementNamed('/onboarding'));
                 },
+              ),
+              ListTile(
+                title: const Text('Oceni aplikaciju'),
+                leading: const Icon(Icons.star_outline),
+                onTap: () =>
+                    context.read<ExternalActions>().requestAppReview(),
+              ),
+              ListTile(
+                title: const Text('Politika privatnosti'),
+                leading: const Icon(Icons.privacy_tip_outlined),
+                onTap: () =>
+                    context.read<ExternalActions>().openPrivacyPolicy(),
               ),
             ],
           ),
