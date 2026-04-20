@@ -2,6 +2,7 @@
 // ABOUTME: Shows allergenicity index legend for all tracked allergens.
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:udahni/core/helpers/allergen_type_helper.dart';
 import 'package:udahni/core/helpers/severity_helper.dart';
@@ -20,6 +21,17 @@ class AboutScreen extends StatefulWidget {
 
 //--------------------------------------------------------------------------
 class _AboutScreenState extends State<AboutScreen> {
+  String? _version;
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      if (!mounted) return;
+      setState(() => _version = info.version);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<HomeViewModel>();
@@ -59,7 +71,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 // version
                 const SizedBox(height: 4.0),
                 Text(
-                  'Verzija 1.0.0',
+                  _version == null ? '' : 'Verzija $_version',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: mutedTextColor),
